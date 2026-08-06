@@ -9,3 +9,7 @@
   --color-background: #e3f2fd;
   --color-surface: #ffffff;
 }
+
+* {
+  transition: all 0.2s;
+}

@@ -1,15 +1,13 @@
-import { signInAction } from "./action";
+import LoginForm from "../_components/LoginForm";
+import Logo from "../_components/Logo";
 
 function page() {
   return (
-    <div className="">
-      <form action={signInAction}>
-        <label htmlFor="">Email</label>
-        <input name="email" type="email" />
-        <label htmlFor="">Password</label>
-        <input name="password" type="password" />
-        <button type="submit">Submit</button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-primary-50">
+      <div className="absolute top-10 left-10">
+        <Logo />
+      </div>
+      <LoginForm />
     </div>
   );
 }
