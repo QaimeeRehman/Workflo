@@ -1,4 +1,11 @@
+"use client";
+
+import { useState } from "react";
+
 function ProductForm() {
+  const [selectedProduct, setSelectedProduct] = useState("");
+  const [category, setCategory] = useState("noValue");
+  const [quantity, setQuantity] = useState(0);
   return (
     <form className="rounded-xl bg-white p-6 shadow">
       <h2 className="mb-4 text-xl font-semibold">Add Product</h2>
@@ -9,6 +16,8 @@ function ProductForm() {
           type="text"
           placeholder="Product name"
           className="rounded-lg border px-4 py-3"
+          value={selectedProduct}
+          onChange={(e) => setSelectedProduct(e.target.value)}
         />
 
         <select name="unit" className="rounded-lg border px-4 py-3" value="box">
@@ -16,7 +25,12 @@ function ProductForm() {
           <option value="box">Box</option>
         </select>
 
-        <select className="rounded-lg border px-4 py-3" value="noValue">
+        <select
+          name="category"
+          className="rounded-lg border px-4 py-3"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
           <option value="noValue">Category</option>
           <option value="tp">TP</option>
           <option value="sp">SP</option>
@@ -28,8 +42,11 @@ function ProductForm() {
           type="number"
           placeholder="Qty"
           className="rounded-lg border px-4 py-3"
+          value={quantity}
+          onChange={(e) => setQuantity(Number(e.target.value))}
         />
 
+        {/* Price will come from database after fetching category */}
         <input
           disabled
           value="322.78"

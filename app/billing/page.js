@@ -1,9 +1,9 @@
-import BillInvoice from "../_components/BillInvoice";
-import BillInvoiceActions from "../_components/BillInvoiceActions";
-import BillInvoiceSummary from "../_components/BillInvoiceSummary";
-import CustomerInfo from "../_components/CustomerInfo";
-import CustomerSearch from "../_components/CustomerSearch";
-import ProductForm from "../_components/ProductForm";
+import BillInvoice from "../_components/Billing/BillInvoice";
+import BillInvoiceActions from "../_components/Billing/BillInvoiceActions";
+import BillInvoiceSummary from "../_components/Billing/BillInvoiceSummary";
+import CustomerInfo from "../_components/Billing/CustomerInfo";
+import CustomerSearch from "../_components/Billing/CustomerSearch";
+import ProductForm from "../_components/Billing/ProductForm";
 
 const bill = [
   { product: "sooper", category: "tp", Qty: 10, price: 322.78, total: 3227.8 },
@@ -11,7 +11,7 @@ const bill = [
 
 function page() {
   return (
-    <div className="mx-auto  p-8">
+    <div>
       <h1 className="mb-6 text-3xl font-bold text-slate-800">New Invoice</h1>
 
       <div className="grid grid-cols-12 gap-6">
