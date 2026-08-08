@@ -26,14 +26,19 @@ function Navbar() {
           Billing
         </NavItem>
 
-        <NavItem href="/inventory">
-          <Boxes size={18} />
-          Inventory
-        </NavItem>
-
         <NavItem href="/customers">
           <Users size={18} />
           Customers
+        </NavItem>
+
+        <NavItem href="/products">
+          <Package size={18} />
+          Products
+        </NavItem>
+
+        <NavItem href="/inventory">
+          <Boxes size={18} />
+          Inventory
         </NavItem>
 
         <NavItem href="/reports">

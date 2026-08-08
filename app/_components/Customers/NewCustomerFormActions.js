@@ -1,4 +1,8 @@
-function NewCustomerFormActions() {
+import { useFormStatus } from "react-dom";
+import SpinnerMini from "../SpinnerMini";
+
+function NewCustomerFormActions({ customerId }) {
+  const { pending } = useFormStatus();
   return (
     <div className="flex justify-end gap-4 border-t border-gray-200 pt-6">
       <button
@@ -10,9 +14,15 @@ function NewCustomerFormActions() {
 
       <button
         type="submit"
-        className="rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700"
+        className="rounded-lg bg-primary-500 px-8 py-3 font-semibold text-white transition hover:bg-primary-900"
       >
-        Save Customer
+        {pending ? (
+          <SpinnerMini />
+        ) : customerId ? (
+          "Update customer"
+        ) : (
+          "Save customer"
+        )}
       </button>
     </div>
   );

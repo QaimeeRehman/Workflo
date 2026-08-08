@@ -1,7 +1,34 @@
 import CustomersFilters from "../_components/Customers/CustomersFilters";
 import CustomerTable from "../_components/Customers/CustomerTable";
 import Link from "next/link";
-function page() {
+import { supabase } from "../_lib/supabase";
+async function page({ searchParams }) {
+  const params = await searchParams;
+  const search = params.search ?? "";
+  const area = params.area ?? "";
+  const saleType = params.saleType ?? "";
+  const taxCategory = params.taxCategory ?? "";
+
+  let query = supabase.from("customers").select("*");
+
+  if (search) {
+    query = query.or(`fullName.ilike.%${search}%,phone.ilike.%${search}%`);
+  }
+
+  if (area) {
+    query = query.eq("area", area);
+  }
+
+  if (saleType) {
+    query = query.eq("saleType", saleType);
+  }
+
+  if (taxCategory) {
+    query = query.eq("taxCategory", taxCategory);
+  }
+
+  const { data: customers } = await query;
+
   return (
     <div className=" space-y-6 p-6">
       {/* Header */}
@@ -23,7 +50,11 @@ function page() {
       <CustomersFilters />
       {/* Table */}
       <div className="overflow-hidden rounded-xl bg-white shadow">
-        <CustomerTable />
+        {customers.length > 0 ? (
+          <CustomerTable customers={customers} />
+        ) : (
+          <p className="text-center">No Customer found</p>
+        )}
       </div>
     </div>
   );

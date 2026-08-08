@@ -1,3 +1,5 @@
+"use client";
+import BackButton from "@/app/_components/BackButton";
 import NewCustomerForm from "@/app/_components/Customers/NewCustomerForm";
 
 function page() {
@@ -13,10 +15,7 @@ function page() {
             Enter customer information to create a new account.
           </p>
         </div>
-
-        <button className="rounded-lg border border-slate-300 px-5 py-3 font-medium hover:bg-slate-100">
-          Back
-        </button>
+        <BackButton className="rounded-lg border border-slate-300 px-5 py-3 font-medium hover:bg-slate-100" />
       </div>
 
       {/* Form */}

@@ -4,6 +4,7 @@ import BillInvoiceSummary from "../_components/Billing/BillInvoiceSummary";
 import CustomerInfo from "../_components/Billing/CustomerInfo";
 import CustomerSearch from "../_components/Billing/CustomerSearch";
 import ProductForm from "../_components/Billing/ProductForm";
+import Spinner from "../_components/Spinner";
 
 const bill = [
   { product: "sooper", category: "tp", Qty: 10, price: 322.78, total: 3227.8 },

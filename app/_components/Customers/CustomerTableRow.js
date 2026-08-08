@@ -1,15 +1,16 @@
 import CustomersActions from "./CustomersActions";
 
-function CustomerTableRow() {
+function CustomerTableRow({ customer }) {
+  const { id, fullName, phone, saleType, taxCategory, area } = customer;
   return (
     <tr className="border-t hover:bg-slate-50">
-      <td className="px-6 py-4">1</td>
-      <td className="px-6 py-4 font-medium">Ahmed Store</td>
-      <td className="px-6 py-4">03001234567</td>
-      <td className="px-6 py-4">Wholesale</td>
-      <td className="px-6 py-4">Filer</td>
-      <td className="px-6 py-4">Market</td>
-      <CustomersActions />
+      <td className="px-6 py-4">{id}</td>
+      <td className="px-6 py-4 font-medium">{fullName}</td>
+      <td className="px-6 py-4">{phone}</td>
+      <td className="px-6 py-4">{saleType}</td>
+      <td className="px-6 py-4">{taxCategory}</td>
+      <td className="px-6 py-4">{area}</td>
+      <CustomersActions customerId={id} />
     </tr>
   );
 }

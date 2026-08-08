@@ -1,7 +1,6 @@
-import CustomersActions from "./CustomersActions";
 import CustomerTableRow from "./CustomerTableRow";
 
-function CustomerTable() {
+function CustomerTable({ customers }) {
   return (
     <table className="w-full">
       <thead className="bg-slate-100">
@@ -17,7 +16,9 @@ function CustomerTable() {
       </thead>
 
       <tbody>
-        <CustomerTableRow />
+        {customers.map((customer) => (
+          <CustomerTableRow customer={customer} key={customer.id} />
+        ))}
       </tbody>
     </table>
   );

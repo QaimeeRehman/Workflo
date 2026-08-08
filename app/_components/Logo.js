@@ -8,7 +8,6 @@ function Logo({ height = 200, width = 200 }) {
       {/* <Image src="/logo.png" height="60" width="60" alt="The Wild Oasis logo" /> */}
       <Image
         src={logo}
-        quality={100}
         height={height}
         width={width}
         alt="The Wild Oasis logo"
