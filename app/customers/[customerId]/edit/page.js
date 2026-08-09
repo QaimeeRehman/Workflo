@@ -1,6 +1,5 @@
 import NewCustomerForm from "@/app/_components/Customers/NewCustomerForm";
 import { supabase } from "@/app/_lib/supabase";
-import Link from "next/link";
 
 async function page({ params }) {
   const { customerId } = await params;

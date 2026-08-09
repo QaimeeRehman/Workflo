@@ -1,23 +1,9 @@
 "use server";
 
-import { supabase } from "../_lib/supabase";
+import { getCustomerByQuery } from "../_lib/dataService";
 
-export async function getCustomer(query) {
-  let supabaseQuery = supabase.from("customers").select("*");
+export async function getCustomerAction(query) {
+  let customer = await getCustomerByQuery(query);
 
-  if (!isNaN(query)) {
-    supabaseQuery = supabaseQuery.or(
-      `id.eq.${query},phone.eq.${query},fullName.ilike.%${query}%`,
-    );
-  } else {
-    supabaseQuery = supabaseQuery.or(
-      `phone.eq.${query},fullName.ilike.%${query}%`,
-    );
-  }
-
-  const { data, error } = await supabaseQuery.maybeSingle();
-
-  if (error) return null;
-
-  return data;
+  return customer;
 }

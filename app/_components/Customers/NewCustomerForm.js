@@ -4,30 +4,38 @@ import {
   createCustomerAction,
   updateCustomerAction,
 } from "@/app/customers/action";
-import NewCustomerFormActions from "./NewCustomerFormActions";
 import toast from "react-hot-toast";
+import NewCustomerFormActions from "./NewCustomerFormActions";
+import { redirect } from "next/navigation";
 
 function NewCustomerForm({ customer }) {
   async function handleFormSubmitCreateCustomer(formData) {
     const { data, error } = await createCustomerAction(formData);
 
+    if (error?.code === "23505") {
+      toast.error(error?.details);
+      return;
+    }
     if (!data) {
-      toast.error(error.details);
+      toast.error("Customer is not created");
       return;
     }
 
     toast.success("Customer created successfully");
   }
+
   async function handleFormSubmitUpdateCustomer(formData) {
     const { data, error } = await updateCustomerAction(formData);
-    console.log(data, error);
+
     if (!data) {
       toast.error(error.details);
       return;
     }
 
     toast.success("Customer updated successfully");
+    redirect("/customers");
   }
+
   return (
     <form
       action={

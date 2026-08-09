@@ -1,3 +1,5 @@
+import { toCapitalize } from "@/app/_lib/helper";
+
 function BillInvoice({ bill }) {
   return (
     <div className="rounded-xl bg-white p-6 shadow">
@@ -20,7 +22,8 @@ function BillInvoice({ bill }) {
             <tr key={i} className="border-b">
               {/* str.charAt(0).toUpperCase() + str.slice(1) */}
               <td className="py-4">
-                {item.product.charAt(0).toUpperCase() + item.product.slice(1)}
+                {toCapitalize(item.product)}
+                {/* {item.product.charAt(0).toUpperCase() + item.product.slice(1)} */}
               </td>
               <td>{item.category.toUpperCase()}</td>
               <td>{item.Qty}</td>

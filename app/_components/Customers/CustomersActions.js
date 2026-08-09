@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteCustomer } from "@/app/customers/action";
+import { deleteCustomerAction } from "@/app/customers/action";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ function CustomersActions({ customerId }) {
   async function handleDelete() {
     if (!confirm("Are you sure you want to delete this customer")) return;
 
-    const error = await deleteCustomer(Number(customerId));
+    const error = await deleteCustomerAction(Number(customerId));
     if (error) {
       toast.error(error.message);
     }

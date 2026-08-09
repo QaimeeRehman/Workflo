@@ -1,6 +1,10 @@
 "use server";
 
-import { supabase } from "../_lib/supabase";
+import {
+  createNewCustomer,
+  deleteCustomer,
+  updateCustomer,
+} from "../_lib/dataService";
 import { revalidatePath } from "next/cache";
 
 export async function createCustomerAction(formData) {
@@ -20,10 +24,7 @@ export async function createCustomerAction(formData) {
     area: formData.get("area"),
   };
 
-  const { data, error } = await supabase
-    .from("customers")
-    .insert([newCustomer])
-    .select();
+  const { data, error } = await createNewCustomer(newCustomer);
 
   revalidatePath("/customers");
 
@@ -47,20 +48,17 @@ export async function updateCustomerAction(formData) {
     area: formData.get("area"),
   };
 
-  const { data, error } = await supabase
-    .from("customers")
-    .update(newCustomer)
-    .eq("id", formData.get("id"))
-    .select();
+  const { data, error } = await updateCustomer(formData.get("id"), newCustomer);
 
   revalidatePath("/customers");
 
   return { data, error };
 }
 
-export async function deleteCustomer(id) {
-  const { error } = await supabase.from("customers").delete().eq("id", id);
+export async function deleteCustomerAction(id) {
+  const error = await deleteCustomer(id);
 
   if (!error) revalidatePath("/customers");
+
   return error;
 }

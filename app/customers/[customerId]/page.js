@@ -2,7 +2,7 @@ import Info from "@/app/_components/Info";
 import { toCapitalize } from "@/app/_lib/helper";
 import { supabase } from "@/app/_lib/supabase";
 import Link from "next/link";
-import { format, formatISO } from "date-fns";
+import { format } from "date-fns";
 async function page({ params }) {
   const { customerId } = await params;
 
@@ -15,15 +15,12 @@ async function page({ params }) {
     customer[0];
 
   return (
-    <div className="space-y-6 ">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
-            {fullName
-              .split(" ")
-              .map((word) => word[0].toUpperCase() + word.slice(1))
-              .join(" ")}
+            {toCapitalize(fullName)}
           </h1>
           <p className="mt-1 text-slate-500">Customer Details</p>
         </div>

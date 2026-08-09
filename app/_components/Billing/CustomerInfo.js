@@ -3,7 +3,6 @@ import { useBillingStore } from "../../_store/billingStore";
 
 function CustomerInfo() {
   const customer = useBillingStore((state) => state.customer);
-  console.log(customer);
 
   if (!customer)
     return (

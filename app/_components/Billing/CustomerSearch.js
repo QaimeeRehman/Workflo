@@ -2,7 +2,7 @@
 
 import toast from "react-hot-toast";
 import { useBillingStore } from "../../_store/billingStore";
-import { getCustomer } from "../../billing/action";
+import { getCustomerAction } from "../../billing/action";
 import { useState } from "react";
 
 function CustomerSearch() {
@@ -11,12 +11,13 @@ function CustomerSearch() {
 
   async function handleSearch() {
     try {
-      const customer = await getCustomer(query);
+      const customer = await getCustomerAction(query);
 
       if (!customer) {
         toast.error("Customer not found");
         return;
       }
+
       setCustomer(customer);
       toast.success("Customer loaded");
     } catch (error) {
