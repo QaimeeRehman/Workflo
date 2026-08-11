@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
-// ALL BILLING API
 
+///////////// CUSTOMER TABLE //////////////////
 export async function getCustomerByQuery(query) {
   let supabaseQuery = supabase.from("customers").select("*");
 
@@ -19,8 +19,6 @@ export async function getCustomerByQuery(query) {
 
   return data;
 }
-
-// ALL CUSTOMERS API
 
 export async function getAllCustomers() {
   const { data: customers, error } = await supabase
@@ -63,7 +61,7 @@ export async function deleteCustomer(id) {
   return error;
 }
 
-// ALL PRODUCTS API
+///////////// PRODUCT TABLE //////////////////
 
 export async function getAllProducts() {
   const { data: products, error } = await supabase.from("products").select("*");
@@ -82,6 +80,17 @@ export async function getProductById(id) {
   if (error) throw new Error(error.message);
 
   return product;
+}
+
+export async function getProductsByQuery(query) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id")
+    .ilike("name", `%${query}%`);
+
+  if (error) throw new Error("Matching product by query is not found");
+
+  return data;
 }
 
 export async function getProductPricing(type, id) {
@@ -106,6 +115,21 @@ export async function getProductPackaging(id) {
   return data;
 }
 
+export async function getProductPackagingByIdAndCategory(id, category) {
+  const {
+    data: [packaging],
+    error,
+  } = await supabase
+    .from("product_packaging")
+    .select("*")
+    .eq("product_id", id)
+    .eq("category", category);
+
+  if (error) throw new Error("Product packaging not found");
+
+  return packaging;
+}
+
 export async function createNewProduct(newProduct) {
   const { data, error } = await supabase
     .from("products")
@@ -115,6 +139,16 @@ export async function createNewProduct(newProduct) {
 
   return { data, error };
 }
+
+export async function deleteProduct(id) {
+  const { error } = await supabase.from("products").delete().eq("id", id);
+
+  if (error) throw new Error("product has not been deleted");
+
+  return error;
+}
+
+///////////// PRICING TABLE //////////////////
 
 export async function createNewPricing(type, id) {
   const { data, error } = await supabase
@@ -126,6 +160,8 @@ export async function createNewPricing(type, id) {
 
   return { data, error };
 }
+
+///////////// PACKAGING TABLE //////////////////
 
 export async function createNewPackaging(newPackaging) {
   const { data, error } = await supabase
@@ -159,10 +195,77 @@ export async function getPackagingByIdAndCategory(id, category) {
   return { packaging, packagingError };
 }
 
-export async function deleteProduct(id) {
-  const { error } = await supabase.from("products").delete().eq("id", id);
+///////////// INVENTORY TABLE //////////////////
 
-  if (error) throw new Error("product has not been deleted");
+export async function getAllInventory() {
+  const { data: inventory, error } = await supabase.from("inventory")
+    .select(`*,product:products (
+     id,name 
+    )`);
 
-  return error;
+  if (error) throw new Error(error.message);
+
+  return inventory;
 }
+
+///////////// INVENTORY TABLE //////////////////
+export async function getInventoryMovement() {
+  const { data: inventoryMovement, error } = await supabase
+    .from("inventory_movement")
+    .select("*")
+    .eq("movement_type", "stock_in")
+    .order("created_at", { ascending: false });
+
+  return inventoryMovement;
+}
+
+export async function getFilteredInventory(search, ctg, stock) {
+  let query = supabase.from("inventory").select(`*,product:products (
+    id,
+    name
+    )`);
+
+  if (search) {
+    query = query.ilike("product.name", `%${search}%`);
+  }
+
+  if (ctg) {
+    query = query.eq("category", ctg);
+  }
+
+  if (stock === "in-stock") {
+    query = query.gt("quantity_boxes", 0);
+  }
+
+  if (stock === "low-stock") {
+    query = query.lt("quantity_boxes", 180);
+  }
+
+  if (stock === "out-of-stock") {
+    query = query.eq("quantity_boxes", 0);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error("failed to filter data");
+
+  return data;
+}
+
+// export async function getInventoryByProductIdAndCategory(id, ctg) {
+//   let query = supabase.from("inventory").select("*");
+
+//   if (id) {
+//     query = query.eq("product_id", Number(id));
+//   }
+
+//   if (ctg) {
+//     query = query.eq("category", ctg);
+//   }
+
+//   const { data, error } = await query;
+
+//   if (error) throw new Error("Inventory is not found");
+
+//   return data;
+// }

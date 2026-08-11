@@ -1,8 +1,31 @@
+"use client";
+
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+
 function InventoryFilters() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function handleFilter(name, value) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (!value) {
+      params.delete(name);
+    } else {
+      params.set(name, value);
+    }
+
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
   return (
     <div className="rounded-xl bg-white p-5 shadow">
       <div className="flex gap-4">
         <input
+          onChange={(e) => {
+            handleFilter("search", e.target.value);
+          }}
+          defaultValue={searchParams.get("search") ?? ""}
           type="text"
           placeholder="Search product..."
           className="w-full rounded-lg border border-slate-300 px-4 py-3
@@ -11,6 +34,10 @@ function InventoryFilters() {
         />
 
         <select
+          onChange={(e) => {
+            handleFilter("category", e.target.value);
+          }}
+          defaultValue={searchParams.get("category") ?? ""}
           className="rounded-lg border border-slate-300 px-4 py-3
               text-slate-700 outline-none focus:border-primary-500"
         >
@@ -23,6 +50,10 @@ function InventoryFilters() {
         </select>
 
         <select
+          onChange={(e) => {
+            handleFilter("stock", e.target.value);
+          }}
+          defaultValue={searchParams.get("stock") ?? ""}
           className="rounded-lg border border-slate-300 px-4 py-3
               text-slate-700 outline-none focus:border-primary-500"
         >

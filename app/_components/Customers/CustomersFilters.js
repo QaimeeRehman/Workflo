@@ -16,7 +16,7 @@ function CustomersFilters() {
       params.set(name, value);
     }
 
-    router.replace(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (
