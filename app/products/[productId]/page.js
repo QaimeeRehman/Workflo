@@ -16,6 +16,7 @@ import {
 } from "@/app/_lib/dataService";
 import ProductPackaging from "@/app/_components/Product/ProductPackagingBiscuit";
 import ProductPackagingCakeView from "@/app/_components/Product/ProductPackagingCakeView";
+import ProductPackagingBiscuitView from "@/app/_components/Product/ProductPackagingBiscuitView";
 import { toCapitalize } from "@/app/_lib/helper";
 import ProductPricingBiscuitView from "@/app/_components/Product/ProductPricingBiscuitView";
 import ProductPricingCakeView from "@/app/_components/Product/ProductPricingCakeView";
@@ -34,11 +35,6 @@ async function page({ params }) {
 
     return acc;
   }, {});
-
-  let pricingType;
-
-  if (Object.keys(pricing).length < 10) pricingType = "cake";
-  if (Object.keys(pricing).length > 10) pricingType = "biscuit";
 
   const pricingCategoryBiscuit = {
     tp: {
@@ -76,12 +72,6 @@ async function page({ params }) {
     },
   };
 
-  // function isPricingComplete(pricing) {
-  //   return Object.values(pricing).every(
-  //     (value) => value !== null && value !== undefined,
-  //   );
-  // }
-
   const hasPricing = Object.values(
     product.type === "cake" ? pricingCategoryCake : pricingCategoryBiscuit,
   ).some((category) =>
@@ -89,28 +79,7 @@ async function page({ params }) {
       (price) => price !== null && price !== undefined,
     ),
   );
-  // const packaging = {
-  //   tp: {
-  //     units_per_box: 12,
-  //     boxes_per_carton: 8,
-  //   },
-
-  //   sp: {
-  //     units_per_box: 24,
-  //     boxes_per_carton: 6,
-  //   },
-
-  //   mp: {
-  //     units_per_box: 12,
-  //     boxes_per_carton: 10,
-  //   },
-
-  //   hr: {
-  //     units_per_box: 6,
-  //     boxes_per_carton: 12,
-  //   },
-  // };
-
+  console.log(packaging);
   return (
     <div className="mx-auto min-w-[80vw]  space-y-6 p-6">
       {/* Back */}
@@ -193,7 +162,7 @@ async function page({ params }) {
 
       {/* Packaging */}
       {product.type === "biscuit" && (
-        <ProductPricingBiscuitView packaging={packaging} />
+        <ProductPackagingBiscuitView packaging={packaging} />
       )}
       {product.type === "cake" && (
         <ProductPackagingCakeView packaging={packaging} />

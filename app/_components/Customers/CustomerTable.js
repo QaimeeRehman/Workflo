@@ -8,6 +8,7 @@ function CustomerTable({ customers }) {
           <th className="px-6 py-4 text-left">ID</th>
           <th className="px-6 py-4 text-left">Customer</th>
           <th className="px-6 py-4 text-left">Phone</th>
+          <th className="px-6 py-4 text-left">CNIC</th>
           <th className="px-6 py-4 text-left">Sale Type</th>
           <th className="px-6 py-4 text-left">Tax</th>
           <th className="px-6 py-4 text-left">Area</th>

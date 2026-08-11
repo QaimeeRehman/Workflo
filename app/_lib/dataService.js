@@ -138,6 +138,27 @@ export async function createNewPackaging(newPackaging) {
   return { data, error };
 }
 
+export async function getAllPackagings() {
+  const { data: packaging, error } = await supabase
+    .from("product_packaging")
+    .select("*");
+
+  if (error) throw new Error(error.message);
+
+  return packaging;
+}
+
+export async function getPackagingByIdAndCategory(id, category) {
+  const { data: packaging, error: packagingError } = await supabase
+    .from("product_packaging")
+    .select("units_per_box, boxes_per_carton")
+    .eq("product_id", id)
+    .eq("category", category)
+    .single();
+
+  return { packaging, packagingError };
+}
+
 export async function deleteProduct(id) {
   const { error } = await supabase.from("products").delete().eq("id", id);
 

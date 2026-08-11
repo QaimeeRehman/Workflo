@@ -1,5 +1,4 @@
 function ProductPackagingBiscuitView({ packaging }) {
-  console.log(packaging);
   return (
     <div className="rounded-2xl bg-white shadow">
       {/* Header */}
@@ -19,29 +18,29 @@ function ProductPackagingBiscuitView({ packaging }) {
           <div>Boxes per Carton</div>
         </div>
         {/* TP */}
-        {/* <PackagingRow
+        <PackagingRow
           category="TP"
           unitsPerBox={packaging.tp.units_per_box}
           boxesPerCarton={packaging.tp.boxes_per_carton}
-        /> */}
+        />
         {/* SP */}
-        {/* <PackagingRow
+        <PackagingRow
           category="SP"
           unitsPerBox={packaging.sp.units_per_box}
           boxesPerCarton={packaging.sp.boxes_per_carton}
-        /> */}
+        />
         {/* MP */}
-        {/* <PackagingRow
+        <PackagingRow
           category="MP"
           unitsPerBox={packaging.mp.units_per_box}
           boxesPerCarton={packaging.mp.boxes_per_carton}
-        /> */}
+        />
         {/* HR */}
-        {/* <PackagingRow
+        <PackagingRow
           category="HR"
           unitsPerBox={packaging.hr.units_per_box}
           boxesPerCarton={packaging.hr.boxes_per_carton}
-        /> */}
+        />
       </div>
     </div>
   );
