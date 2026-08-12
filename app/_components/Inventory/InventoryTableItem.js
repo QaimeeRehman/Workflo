@@ -3,6 +3,7 @@ import {
   getProductPackagingByIdAndCategory,
 } from "@/app/_lib/dataService";
 import { toCapitalize } from "@/app/_lib/helper";
+import Link from "next/link";
 
 function InventoryTableItem({ inventory, inventoryMovement }) {
   if (inventory.length === 0)
@@ -21,10 +22,12 @@ function InventoryTableItem({ inventory, inventoryMovement }) {
             mov.product_id === inventoryItem.product_id &&
             mov.category === inventoryItem.category,
         )?.cost_per_box;
+
         const productPackaging = await getProductPackagingByIdAndCategory(
           product.id,
           inventoryItem.category,
         );
+
         const boxesPerCarton = productPackaging.boxes_per_carton;
         const carton = Math.floor(
           Number(inventoryItem.quantity_boxes) / Number(boxesPerCarton),
@@ -35,15 +38,19 @@ function InventoryTableItem({ inventory, inventoryMovement }) {
         const totalCost =
           Number(costPerBox) * Number(inventoryItem.quantity_boxes);
         return (
-          <InventoryRow
+          <Link
+            href={`/inventory/${inventoryItem.product_id}/${inventoryItem.category}`}
             key={inventoryItem.id}
-            product={toCapitalize(product.name?.split(" "))}
-            category={inventoryItem.category.toUpperCase()}
-            cartons={carton}
-            boxes={boxes}
-            cost={`Rs ${cartonCost.toLocaleString()}`}
-            value={`Rs ${totalCost.toLocaleString()}`}
-          />
+          >
+            <InventoryRow
+              product={toCapitalize(product.name?.split(" "))}
+              category={inventoryItem.category.toUpperCase()}
+              cartons={carton}
+              boxes={boxes}
+              cost={`Rs ${cartonCost.toLocaleString()}`}
+              value={`Rs ${totalCost.toLocaleString()}`}
+            />
+          </Link>
         );
       })}
     </>
@@ -54,7 +61,7 @@ function InventoryRow({ product, category, cartons, boxes, cost, value }) {
   return (
     <div
       className="grid grid-cols-6 items-center border-t border-slate-100
-        px-6 py-5 text-sm"
+        px-6 py-5 text-sm hover:bg-slate-100"
     >
       {/* Product */}
       <div className="col-span-2">

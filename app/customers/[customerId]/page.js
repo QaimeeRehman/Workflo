@@ -48,7 +48,7 @@ async function page({ params }) {
           <Info label="Area" value={toCapitalize(area)} />
           <Info
             label="Created At"
-            value={format(new Date(created_at), "dd MMM yyyy")}
+            value={format(new Date(created_at), "MMM dd, yyyy")}
           />
         </div>
       </div>

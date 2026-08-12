@@ -161,7 +161,7 @@ export async function stockInFormAction(items, formData) {
     const newInventoryMovement = {
       product_id: productId,
       category,
-      movement_type: "stock_in",
+      movement_type: "stock-in",
       quantity_boxes: quantityBoxes,
       reference_id: supplierInvoiceItem.id,
       cost_per_box: costPerBox,
@@ -199,13 +199,13 @@ export async function stockInFormAction(items, formData) {
     if (inventoryError)
       throw new Error(`Failed to create inventory: ${inventoryError.message}`);
 
-    console.log("------------SUPPLIER INVOICE -----------------");
-    console.log(supplierInvoice);
-    console.log("------------SUPPLIER INVOICE ITEM -----------------");
-    console.log(supplierInvoiceItem);
-    console.log("------------ INVENTORY MOVEMENT -----------------");
-    console.log(inventoryMovement);
-    console.log("------------ INVENTORY -----------------");
+    // console.log("------------SUPPLIER INVOICE -----------------");
+    // console.log(supplierInvoice);
+    // console.log("------------SUPPLIER INVOICE ITEM -----------------");
+    // console.log(supplierInvoiceItem);
+    // console.log("------------ INVENTORY MOVEMENT -----------------");
+    // console.log(inventoryMovement);
+    // console.log("------------ INVENTORY -----------------");
     // console.log(inventory);
   }
 }

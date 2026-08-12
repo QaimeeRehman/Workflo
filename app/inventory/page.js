@@ -1,14 +1,11 @@
-import InventorySummary from "../_components/Inventory/InventorySummary";
 import InventoryFilters from "../_components/Inventory/InventoryFilters";
-import InventoryTable from "../_components/Inventory/InventoryTable";
 import InventoryHeader from "../_components/Inventory/InventoryHeader";
+import InventorySummary from "../_components/Inventory/InventorySummary";
+import InventoryTable from "../_components/Inventory/InventoryTable";
 import {
-  getAllInventory,
   getFilteredInventory,
   getInventoryMovement,
-  getProductsByQuery,
 } from "../_lib/dataService";
-import { supabase } from "../_lib/supabase";
 
 async function page({ searchParams }) {
   const params = await searchParams;
@@ -18,14 +15,15 @@ async function page({ searchParams }) {
   let inventory = await getFilteredInventory();
   const inventoryMovement = await getInventoryMovement();
   if (search) {
-    inventory = await getFilteredInventory(search, category, stock);
+    inventory = await getFilteredInventory(search, category, stock, undefined);
   }
   if (category) {
-    inventory = await getFilteredInventory(search, category, stock);
+    inventory = await getFilteredInventory(search, category, stock, undefined);
   }
   if (stock) {
-    inventory = await getFilteredInventory(search, category, stock);
+    inventory = await getFilteredInventory(search, category, stock, undefined);
   }
+
   return (
     <div className="space-y-6 min-w-[80vw]">
       {/* Header */}

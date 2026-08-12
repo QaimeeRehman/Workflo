@@ -11,12 +11,13 @@ function InventoryHeader() {
       </div>
 
       <div className="flex gap-3">
-        <button
+        <Link
+          href="/inventory/movements"
           className="rounded-lg border border-slate-300 bg-white px-5 py-3
               font-medium text-slate-700 transition hover:bg-slate-50"
         >
           Movements
-        </button>
+        </Link>
 
         <Link
           href="/inventory/stock-in"

@@ -1,6 +1,5 @@
 "use client";
 
-import { toCapitalize } from "@/app/_lib/helper";
 import ProductInformation from "./ProductInformation";
 import QuantityInformation from "./QuantityInformation";
 import CostInformation from "./CostInformation";

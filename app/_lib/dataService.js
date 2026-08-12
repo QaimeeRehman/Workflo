@@ -209,17 +209,8 @@ export async function getAllInventory() {
 }
 
 ///////////// INVENTORY TABLE //////////////////
-export async function getInventoryMovement() {
-  const { data: inventoryMovement, error } = await supabase
-    .from("inventory_movement")
-    .select("*")
-    .eq("movement_type", "stock_in")
-    .order("created_at", { ascending: false });
 
-  return inventoryMovement;
-}
-
-export async function getFilteredInventory(search, ctg, stock) {
+export async function getFilteredInventory(search, ctg, stock, product_id) {
   let query = supabase.from("inventory").select(`*,product:products (
     id,
     name
@@ -245,6 +236,10 @@ export async function getFilteredInventory(search, ctg, stock) {
     query = query.eq("quantity_boxes", 0);
   }
 
+  if (product_id) {
+    query = query.eq("product_id", product_id);
+  }
+
   const { data, error } = await query;
 
   if (error) throw new Error("failed to filter data");
@@ -252,6 +247,98 @@ export async function getFilteredInventory(search, ctg, stock) {
   return data;
 }
 
+///////////// INVENTORY MOVEMENTS TABLE //////////////////
+export async function getInventoryMovementsWithProduct(from, to) {
+  let query = supabase
+    .from("inventory_movement")
+    .select(
+      `
+    id,
+    product_id,
+    category,
+    movement_type,
+    quantity_boxes,
+    cost_per_box,
+    reference_id,
+    reference_type,
+    created_at,
+    created_by,
+    user:users(
+    fullName
+    ),
+    product:products (
+      id,
+      name,
+      type
+    )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (from) {
+    query = query.gte("created_at", from.toISOString());
+  }
+  if (to) {
+    query = query.lt("created_at", to.toISOString());
+  }
+
+  const { data, error } = await query;
+  console.log(data, from, to);
+
+  if (error) throw new Error(`${error.message}`);
+
+  return data;
+}
+export async function getInventoryMovementByIdAndCategory(id, category) {
+  const { data, error } = await supabase
+    .from("inventory_movement")
+    .select(
+      `
+    *,
+    user:users(
+    fullName
+    ),
+    product:products (
+      id,
+      name,
+      type
+    )
+    `,
+    )
+    .eq("product_id", id)
+    .eq("category", category)
+    .order("created_at", { ascending: false });
+
+  if (error)
+    throw new Error("Failed to fetch inventory movements with product");
+  return data;
+}
+
+export async function getSupplierInvoiceItemById(id) {
+  const { data: invoiceItem } = await supabase
+    .from("supplier_invoice_item")
+    .select(
+      `
+    id,
+    invoice_id,
+    supplier_invoice (
+      invoice_number
+    )
+  `,
+    )
+    .eq("id", id)
+    .single();
+  return invoiceItem;
+}
+
+export async function getInventoryMovement() {
+  const { data: inventoryMovement, error } = await supabase
+    .from("inventory_movement")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  return inventoryMovement;
+}
 // export async function getInventoryByProductIdAndCategory(id, ctg) {
 //   let query = supabase.from("inventory").select("*");
 
@@ -269,3 +356,21 @@ export async function getFilteredInventory(search, ctg, stock) {
 
 //   return data;
 // }
+
+/////////////////////////////helper
+
+export async function convertBoxesIntoCartonAndBoxes(
+  productId,
+  productCateogory,
+  quantity_boxes,
+) {
+  const productPackaging = await getProductPackagingByIdAndCategory(
+    productId,
+    productCateogory,
+  );
+  const boxesPerCarton = productPackaging.boxes_per_carton;
+  const cartons = Math.floor(Number(quantity_boxes) / Number(boxesPerCarton));
+  const boxes = Number(quantity_boxes) % Number(boxesPerCarton);
+
+  return { boxes, cartons };
+}
