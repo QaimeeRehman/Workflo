@@ -80,3 +80,7 @@ export function getDatePeriodWise(period) {
   }
   return { from, to };
 }
+
+export function roundMoney(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}

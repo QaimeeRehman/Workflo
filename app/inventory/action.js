@@ -161,7 +161,7 @@ export async function stockInFormAction(items, formData) {
     const newInventoryMovement = {
       product_id: productId,
       category,
-      movement_type: "stock-in",
+      movement_type: "stock_in",
       quantity_boxes: quantityBoxes,
       reference_id: supplierInvoiceItem.id,
       cost_per_box: costPerBox,

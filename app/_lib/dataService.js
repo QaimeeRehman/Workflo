@@ -20,6 +20,18 @@ export async function getCustomerByQuery(query) {
   return data;
 }
 
+export async function getCustomerById(id) {
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (customerError) throw new Error("Customer not found");
+
+  return customer;
+}
+
 export async function getAllCustomers() {
   const { data: customers, error } = await supabase
     .from("customers")
@@ -69,6 +81,52 @@ export async function getAllProducts() {
   if (error) throw new Error(error.message);
 
   return products;
+}
+
+export async function getProductContainsIds(ids) {
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, name, type")
+    .in("id", ids);
+
+  if (productsError)
+    throw new Error("Failed to fetch product including these ids");
+
+  return products;
+}
+
+export async function getAllProductsForBilling() {
+  const { data, error } = await supabase.from("products").select(`
+      id,
+      name,
+      type,
+      pricing_biscuit (
+        tp_retail_filer,
+        tp_retail_non-filer,
+        tp_wholesale_filer,
+        tp_wholesale_non-filer,
+        sp_retail_filer,
+        sp_retail_non-filer,
+        sp_wholesale_filer,
+        sp_wholesale_non-filer,
+        mp_retail_filer,
+        mp_retail_non-filer,
+        mp_wholesale_filer,
+        mp_wholesale_non-filer,
+        hr_retail_filer,
+        hr_retail_non-filer,
+        hr_wholesale_filer,
+        hr_wholesale_non-filer
+      ),
+      pricing_cake (
+        retail_filer,
+        retail_non-filer,
+        wholesale_filer,
+        wholesale_non-filer
+      )
+    `);
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function getProductById(id) {
@@ -208,8 +266,6 @@ export async function getAllInventory() {
   return inventory;
 }
 
-///////////// INVENTORY TABLE //////////////////
-
 export async function getFilteredInventory(search, ctg, stock, product_id) {
   let query = supabase.from("inventory").select(`*,product:products (
     id,
@@ -248,6 +304,7 @@ export async function getFilteredInventory(search, ctg, stock, product_id) {
 }
 
 ///////////// INVENTORY MOVEMENTS TABLE //////////////////
+
 export async function getInventoryMovementsWithProduct(from, to) {
   let query = supabase
     .from("inventory_movement")
@@ -289,6 +346,7 @@ export async function getInventoryMovementsWithProduct(from, to) {
 
   return data;
 }
+
 export async function getInventoryMovementByIdAndCategory(id, category) {
   const { data, error } = await supabase
     .from("inventory_movement")
@@ -312,6 +370,39 @@ export async function getInventoryMovementByIdAndCategory(id, category) {
   if (error)
     throw new Error("Failed to fetch inventory movements with product");
   return data;
+}
+
+export async function createInventoryMovements(movements) {
+  const { data, error } = await supabase
+    .from("inventory_movement")
+    .insert(movements)
+    .select();
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function getLatestStockInCost(productId, category) {
+  const { data, error } = await supabase
+    .from("inventory_movement")
+    .select("cost_per_box")
+    .eq("product_id", productId)
+    .eq("category", category)
+    .eq("movement_type", "stock_in")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+
+    throw new Error(error.message);
+  }
+
+  return data.cost_per_box;
 }
 
 export async function getSupplierInvoiceItemById(id) {
@@ -373,4 +464,61 @@ export async function convertBoxesIntoCartonAndBoxes(
   const boxes = Number(quantity_boxes) % Number(boxesPerCarton);
 
   return { boxes, cartons };
+}
+
+///////////// BILLS TABLE //////////////////
+
+export async function createBills(bill) {
+  const { data, error } = await supabase
+    .from("bills")
+    .insert(bill)
+    .select()
+    .single();
+
+  if (error) throw new Error("Failed to create bill");
+
+  return data;
+}
+
+///////////// BILL_ITEMS TABLE //////////////////
+
+export async function createBillItems(billItems) {
+  const { data, error } = await supabase
+    .from("bill_items")
+    .insert(billItems)
+    .select();
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+///////////// BILL_ITEMS TABLE //////////////////
+
+export async function createCashTransaction(transaction) {
+  const { data, error } = await supabase
+    .from("cash_transactions")
+    .insert([transaction])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create cash transaction: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function createCustomerPayment(payment) {
+  const { data, error } = await supabase
+    .from("customer_payments")
+    .insert([payment])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create customer payment: ${error.message}`);
+  }
+
+  return data;
 }
