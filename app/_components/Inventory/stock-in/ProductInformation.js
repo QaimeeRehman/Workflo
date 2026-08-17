@@ -4,12 +4,16 @@ import { toCapitalize } from "@/app/_lib/helper";
 
 function ProductInformation({
   products,
+  productTypes,
   selectedProduct,
   productId,
   category,
   onProductChange,
   onCategoryChange,
 }) {
+  const selectedType = productTypes.find(
+    (type) => type.value === selectedProduct?.type,
+  );
   return (
     <>
       {/* Product */}
@@ -50,19 +54,14 @@ function ProductInformation({
                   focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
         >
           <option value="">Select category</option>
-          {selectedProduct?.type === "biscuit" && (
-            <>
-              <option value="tp">TP</option>
-              <option value="sp">SP</option>
-              <option value="mp">MP</option>
-              <option value="hr">HR</option>
-            </>
-          )}
-          {selectedProduct?.type === "cake" && (
-            <>
-              <option value="cake">Cake</option>
-            </>
-          )}
+          {selectedType?.default_categories.map((category) => {
+            const value = category.toLowerCase();
+            return (
+              <option value={value} key={value}>
+                {category.toUpperCase()}
+              </option>
+            );
+          })}
         </select>
       </div>
     </>

@@ -1,29 +1,32 @@
 "use client";
 
-import ProductInfo from "./ProductInfo";
-import ProductPricingBiscuit from "./ProductPricingBiscuit";
-import ProductPricingCake from "./ProductPricingCake";
-import ProductPackagingBiscuit from "./ProductPackagingBiscuit";
-import Link from "next/link";
-import CRUDButton from "../CRUDButton";
-import { Save } from "lucide-react";
 import { updateProductAndPricingAction } from "@/app/products/action";
-import toast from "react-hot-toast";
+import { Save } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import ProductPackagingCake from "./ProductPackagingCake";
-function UpdateProductForm({ product, pricing, packaging }) {
+import toast from "react-hot-toast";
+import CRUDButton from "../CRUDButton";
+import ProductInfo from "./ProductInfo";
+import ProductPackaging from "./ProductPackaging";
+import ProductPricing from "./ProductPricing";
+function UpdateProductForm({ product, pricing, packaging, productType }) {
   async function handleSubmit(formData) {
-    const {
-      product: updatedProduct,
-      pricing,
-      packaging,
-    } = await updateProductAndPricingAction(formData);
+    try {
+      const {
+        product: updatedProduct,
+        pricing,
+        packaging,
+      } = await updateProductAndPricingAction(formData);
 
-    if (!updatedProduct || !pricing || !packaging)
-      toast.error("Product is not updated");
+      if (!updatedProduct || !pricing || !packaging) {
+        toast.error("Product is not updated");
+        return;
+      }
 
-    toast.success("Product Updated Successfully");
-
+      toast.success("Product Updated Successfully");
+    } catch (error) {
+      console.log(error);
+    }
     redirect(`/products/${product.id}`);
   }
   return (
@@ -33,19 +36,25 @@ function UpdateProductForm({ product, pricing, packaging }) {
       {/* Product Information */}
       <ProductInfo product={product} />
       {/* Pricing */}
-      {product.type === "biscuit" && (
+      {/* {product.type === "biscuit" && (
         <ProductPricingBiscuit pricing={pricing} />
-      )}
+      )} */}
 
       {/* Cake Pricing */}
-      {product.type === "cake" && <ProductPricingCake pricing={pricing} />}
+      {/* {product.type === "cake" && <ProductPricingCake pricing={pricing} />} */}
 
-      {/* Packaging Biscuit */}
-      {product.type === "biscuit" && (
-        <ProductPackagingBiscuit packaging={packaging} />
+      {product.type && (
+        <ProductPricing
+          pricing={pricing}
+          categories={productType.default_categories}
+        />
       )}
-      {product.type === "cake" && (
-        <ProductPackagingCake packaging={packaging} />
+
+      {product.type && (
+        <ProductPackaging
+          packaging={packaging}
+          categories={productType.default_categories}
+        />
       )}
 
       {/* Actions */}

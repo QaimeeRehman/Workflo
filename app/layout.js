@@ -47,8 +47,10 @@ export default function RootLayout({ children }) {
             },
           }}
         />
-        <Header />
-        <Navbar />
+        <div id="no-print">
+          <Header />
+          <Navbar />
+        </div>
         <div className="mx-auto p-8">{children}</div>
       </body>
     </html>

@@ -1,14 +1,159 @@
+// "use server";
+
+// import { redirect } from "next/navigation";
+// import {
+//   createNewPackaging,
+//   createNewPricing,
+//   createNewProduct,
+//   deleteProduct,
+//   getProductTypeByValue,
+// } from "../_lib/dataService";
+// import { revalidatePath } from "next/cache";
+// import { supabase } from "../_lib/supabase";
+
+// const saleTypes = [
+//   "retail_filer",
+//   "retail_non_filer",
+//   "wholesale_filer",
+//   "wholesale_non_filer",
+// ];
+
+// export async function createNewProductAction(formData) {
+//   const newProduct = {
+//     name: formData.get("name"),
+//     type: formData.get("type"),
+//     company: formData.get("company"),
+//   };
+
+//   const {
+//     data: [product],
+//   } = await createNewProduct(newProduct);
+
+//   const productType = await getProductTypeByValue(product.type);
+//   let newPackaging = productType.default_categories.map((category) => {
+//     const lowerCaseCategory = category.toLowerCase();
+//     return {
+//       product_id: product.id,
+//       category: lowerCaseCategory,
+//       units_per_box: Number(formData.get(`${lowerCaseCategory}_units_per_box`)),
+//       boxes_per_carton: Number(
+//         formData.get(`${lowerCaseCategory}_boxes_per_carton`),
+//       ),
+//     };
+//   });
+
+//   await createNewPricing(product.type, product.id);
+//   await createNewPackaging(newPackaging);
+
+//   if (product) redirect(`/products/${product.id}`);
+
+//   return data;
+// }
+
+// export async function updateProductAndPricingAction(formData) {
+//   const productId = formData.get("productId");
+//   const type = formData.get("type");
+
+//   const productType = await getProductTypeByValue(type);
+
+//   if (!productType) throw new Error("Invalid product Type");
+
+//   // 1. Update Product in products
+//   const updatedProduct = {
+//     name: formData.get("name"),
+//     company: formData.get("company"),
+//   };
+
+//   const { data: product, error: productError } = await supabase
+//     .from("products")
+//     .update(updatedProduct)
+//     .eq("id", productId)
+//     .select();
+
+//   // Update Pricing
+//   let updatedPricing = {};
+//   productType.default_categories.forEach((category) => {
+//     const key = category.toLowerCase();
+
+//     saleTypes.forEach((saleType) => {
+//       const fieldName = `${key}_${saleType}`;
+
+//       updatedPricing[fieldName] = formData.get(fieldName) || null;
+//     });
+//   });
+
+//   const { data: pricing, error: pricingError } = await supabase
+//     .from(`pricing_${type}`)
+//     .update(updatedPricing)
+//     .eq("product_id", productId)
+//     .select();
+
+//   // Update Packaging
+//   let updatedPackaging = productType.default_categories.map((category) => {
+//     const key = category.toLowerCase();
+
+//     return {
+//       product_id: productId,
+//       category: key,
+//       units_per_box: Number(formData.get(`${key}_units_per_box`)),
+//       boxes_per_carton: Number(formData.get(`${key}_boxes_per_carton`)),
+//     };
+//   });
+
+//   const { data: packaging, error: packagingError } = await supabase
+//     .from("product_packaging")
+//     .upsert(updatedPackaging, {
+//       onConflict: "product_id,category",
+//     })
+//     .select();
+
+//   if (packagingError) {
+//     throw new Error(packagingError.message);
+//   }
+
+//   revalidatePath(`/products/${productId}`);
+
+//   return { product, pricing, packaging };
+// }
+
+// export async function deleteProductAction(id) {
+//   const error = await deleteProduct(id);
+
+//   if (!error) revalidatePath("/products");
+
+//   return error;
+// }
+
 "use server";
 
 import { redirect } from "next/navigation";
 import {
   createNewPackaging,
-  createNewPricing,
   createNewProduct,
   deleteProduct,
+  getProductTypeByValue,
 } from "../_lib/dataService";
 import { revalidatePath } from "next/cache";
 import { supabase } from "../_lib/supabase";
+
+const saleTypes = [
+  {
+    sale_type: "retail",
+    tax_category: "filer",
+  },
+  {
+    sale_type: "retail",
+    tax_category: "non_filer",
+  },
+  {
+    sale_type: "wholesale",
+    tax_category: "filer",
+  },
+  {
+    sale_type: "wholesale",
+    tax_category: "non_filer",
+  },
+];
 
 export async function createNewProductAction(formData) {
   const newProduct = {
@@ -17,132 +162,154 @@ export async function createNewProductAction(formData) {
     company: formData.get("company"),
   };
 
-  const { data, error } = await createNewProduct(newProduct);
+  const {
+    data: [product],
+    error: productError,
+  } = await createNewProduct(newProduct);
 
-  let newPackaging;
-
-  if (formData.get("type") === "biscuit") {
-    newPackaging = [
-      {
-        product_id: data[0].id,
-        category: "tp",
-        units_per_box: formData.get("tp_units_per_box"),
-        boxes_per_carton: formData.get("tp_boxes_per_carton"),
-      },
-      {
-        product_id: data[0].id,
-        category: "sp",
-        units_per_box: formData.get("sp_units_per_box"),
-        boxes_per_carton: formData.get("sp_boxes_per_carton"),
-      },
-      {
-        product_id: data[0].id,
-        category: "mp",
-        units_per_box: formData.get("mp_units_per_box"),
-        boxes_per_carton: formData.get("mp_boxes_per_carton"),
-      },
-      {
-        product_id: data[0].id,
-        category: "hr",
-        units_per_box: formData.get("hr_units_per_box"),
-        boxes_per_carton: formData.get("hr_boxes_per_carton"),
-      },
-    ];
+  if (productError || !product) {
+    throw new Error(productError?.message || "Failed to create product");
   }
-  if (formData.get("type") === "cake") {
-    newPackaging = {
-      product_id: data[0].id,
-      category: "cake",
-      units_per_box: Number(formData.get(`cake_units_per_box`)),
-      boxes_per_carton: Number(formData.get(`cake_boxes_per_carton`)),
+
+  const productType = await getProductTypeByValue(product.type);
+
+  if (!productType) {
+    throw new Error("Invalid product type");
+  }
+
+  // -----------------------------
+  // Create Packaging
+  // -----------------------------
+
+  const newPackaging = productType.default_categories.map((category) => {
+    const key = category.toLowerCase();
+
+    return {
+      product_id: product.id,
+      category: key,
+      units_per_box: Number(formData.get(`${key}_units_per_box`)),
+      boxes_per_carton: Number(formData.get(`${key}_boxes_per_carton`)),
     };
+  });
+
+  const { error: packagingError } = await supabase
+    .from("product_packaging")
+    .insert(newPackaging);
+
+  if (packagingError) {
+    throw new Error(packagingError.message);
   }
 
-  await createNewPricing(data[0].type, data[0].id);
-  await createNewPackaging(newPackaging);
+  // -----------------------------
+  // Create Pricing
+  // -----------------------------
 
-  if (data) redirect(`/products/${data[0].id}`);
+  const newPricing = productType.default_categories.flatMap((category) => {
+    const key = category.toLowerCase();
 
-  return data;
+    return saleTypes.map(({ sale_type, tax_category }) => {
+      const fieldName = `${key}_${sale_type}_${tax_category}`;
+
+      const value = formData.get(fieldName);
+
+      return {
+        product_id: product.id,
+        category: key,
+        sale_type,
+        tax_category,
+        price: value === "" || value == null ? null : Number(value),
+      };
+    });
+  });
+
+  const { error: pricingError } = await supabase
+    .from("product_pricing")
+    .insert(newPricing);
+
+  if (pricingError) {
+    throw new Error(pricingError.message);
+  }
+
+  redirect(`/products/${product.id}`);
 }
 
 export async function updateProductAndPricingAction(formData) {
+  console.log(formData);
   const productId = formData.get("productId");
   const type = formData.get("type");
-  // 1. Update Product in products
+
+  const productType = await getProductTypeByValue(type);
+
+  if (!productType) {
+    throw new Error("Invalid product type");
+  }
+
+  // -----------------------------
+  // Update Product
+  // -----------------------------
+
   const updatedProduct = {
     name: formData.get("name"),
     company: formData.get("company"),
   };
+
   const { data: product, error: productError } = await supabase
     .from("products")
     .update(updatedProduct)
     .eq("id", productId)
     .select();
 
+  if (productError) {
+    throw new Error(productError.message);
+  }
+
+  // -----------------------------
   // Update Pricing
-  let updatedPricing;
-  if (type === "biscuit") {
-    updatedPricing = {
-      "tp_retail_non-filer": formData.get("tp_retail_non-filer") || null,
-      tp_retail_filer: formData.get("tp_retail_filer") || null,
-      tp_wholesale_filer: formData.get("tp_wholesale_filer") || null,
-      "tp_wholesale_non-filer": formData.get("tp_wholesale_non-filer") || null,
+  // -----------------------------
 
-      sp_retail_filer: formData.get("sp_retail_filer") || null,
-      "sp_retail_non-filer": formData.get("sp_retail_non-filer") || null,
-      sp_wholesale_filer: formData.get("sp_wholesale_filer") || null,
-      "sp_wholesale_non-filer": formData.get("sp_wholesale_non-filer") || null,
+  const updatedPricing = productType.default_categories.flatMap((category) => {
+    const key = category.toLowerCase();
 
-      mp_retail_filer: formData.get("mp_retail_filer") || null,
-      "mp_retail_non-filer": formData.get("mp_retail_non-filer") || null,
-      mp_wholesale_filer: formData.get("mp_wholesale_filer") || null,
-      "mp_wholesale_non-filer": formData.get("mp_wholesale_non-filer") || null,
+    return saleTypes.map(({ sale_type, tax_category }) => {
+      const fieldName = `${key}_${sale_type}_${tax_category}`;
 
-      hr_retail_filer: formData.get("hr_retail_filer") || null,
-      "hr_retail_non-filer": formData.get("hr_retail_non-filer") || null,
-      hr_wholesale_filer: formData.get("hr_wholesale_filer") || null,
-      "hr_wholesale_non-filer": formData.get("hr_wholesale_non-filer") || null,
-    };
-  }
+      const value = formData.get(fieldName);
 
-  if (type === "cake") {
-    updatedPricing = {
-      "retail_non-filer": formData.get("retail_non-filer") || null,
-      retail_filer: formData.get("retail_filer") || null,
-      wholesale_filer: formData.get("wholesale_filer") || null,
-      "wholesale_non-filer": formData.get("wholesale_non-filer") || null,
-    };
-  }
+      return {
+        product_id: productId,
+        category: key,
+        sale_type,
+        tax_category,
+        price: value === "" || value == null ? null : Number(value),
+      };
+    });
+  });
+
   const { data: pricing, error: pricingError } = await supabase
-    .from(`pricing_${type}`)
-    .update(updatedPricing)
-    .eq("product_id", productId)
+    .from("product_pricing")
+    .upsert(updatedPricing, {
+      onConflict: "product_id,category,sale_type,tax_category",
+    })
     .select();
 
+  if (pricingError) {
+    throw new Error(pricingError.message);
+  }
+
+  // -----------------------------
   // Update Packaging
-  let updatedPackaging;
-  if (type === "biscuit")
-    updatedPackaging = ["tp", "sp", "mp", "hr"].map((category) => ({
-      product_id: productId,
-      category,
-      units_per_box: Number(formData.get(`${category}_units_per_box`)),
-      boxes_per_carton: Number(formData.get(`${category}_boxes_per_carton`)),
-    }));
+  // -----------------------------
 
-  if (type === "cake")
-    updatedPackaging = {
+  const updatedPackaging = productType.default_categories.map((category) => {
+    const key = category.toLowerCase();
+
+    return {
       product_id: productId,
-      category: "cake",
-      units_per_box: Number(formData.get("cake_units_per_box")),
-      boxes_per_carton: Number(formData.get("cake_boxes_per_carton")),
+      category: key,
+      units_per_box: Number(formData.get(`${key}_units_per_box`)),
+      boxes_per_carton: Number(formData.get(`${key}_boxes_per_carton`)),
     };
-
-  // const { data: packaging, error: packagingError } = await supabase
-  //   .from("product_packaging")
-  //   .update(updatedPackaging)
-  //   .eq("product_id", productId)
-  //   .select();
+  });
 
   const { data: packaging, error: packagingError } = await supabase
     .from("product_packaging")
@@ -151,15 +318,25 @@ export async function updateProductAndPricingAction(formData) {
     })
     .select();
 
+  if (packagingError) {
+    throw new Error(packagingError.message);
+  }
+
   revalidatePath(`/products/${productId}`);
 
-  return { product, pricing, packaging };
+  return {
+    product,
+    pricing,
+    packaging,
+  };
 }
 
 export async function deleteProductAction(id) {
   const error = await deleteProduct(id);
 
-  if (!error) revalidatePath("/products");
+  if (!error) {
+    revalidatePath("/products");
+  }
 
   return error;
 }

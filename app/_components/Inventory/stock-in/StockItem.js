@@ -9,17 +9,20 @@ function StockItem({
   itemIndex,
   products,
   packaging,
+  productTypes,
   updateItem,
   onRemove,
 }) {
   const selectedProduct = products.find(
     (product) => String(product.id) === String(item.productId),
   );
+
   const selectedPackaging = packaging.find(
     (pack) =>
       String(pack.product_id) === String(item.productId) &&
       pack.category === item.category,
   );
+
   const quantity = Number(item.quantity) || 0;
 
   const quantityBoxes =
@@ -56,6 +59,7 @@ function StockItem({
         <ProductInformation
           products={products}
           selectedProduct={selectedProduct}
+          productTypes={productTypes}
           productId={item.productId}
           category={item.category}
           onProductChange={(value) => updateItem(itemIndex, "productId", value)}

@@ -1,7 +1,7 @@
 import { CircleDollarSign } from "lucide-react";
 import PriceCategory from "./PriceCategory";
 
-function ProductPricingBiscuit({ pricing }) {
+function ProductPricing({ pricing, categories }) {
   return (
     <section className="rounded-2xl bg-white shadow">
       <div className="flex items-center gap-3 border-b p-7">
@@ -11,7 +11,7 @@ function ProductPricingBiscuit({ pricing }) {
 
         <div>
           <h2 className="text-xl font-semibold text-slate-800">
-            Biscuit Pricing
+            Product Pricing
           </h2>
 
           <p className="text-sm text-slate-500">
@@ -21,16 +21,21 @@ function ProductPricingBiscuit({ pricing }) {
       </div>
 
       <div className="space-y-8 p-7">
-        <PriceCategory title="TP" prefix="tp" pricing={pricing} />
+        {categories.map((category) => {
+          const prefix = category.toLowerCase();
 
-        <PriceCategory title="SP" prefix="sp" pricing={pricing} />
-
-        <PriceCategory title="MP" prefix="mp" pricing={pricing} />
-
-        <PriceCategory title="HR" prefix="hr" pricing={pricing} />
+          return (
+            <PriceCategory
+              key={prefix}
+              title={category}
+              prefix={prefix}
+              pricing={pricing}
+            />
+          );
+        })}
       </div>
     </section>
   );
 }
 
-export default ProductPricingBiscuit;
+export default ProductPricing;

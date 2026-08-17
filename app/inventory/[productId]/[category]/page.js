@@ -1,5 +1,7 @@
 import {
   convertBoxesIntoCartonAndBoxes,
+  getBillById,
+  getBillItemsByBillId,
   getFilteredInventory,
   getInventoryMovementByIdAndCategory,
   getProductPackagingByIdAndCategory,
@@ -7,7 +9,7 @@ import {
 } from "@/app/_lib/dataService";
 import { toCapitalize } from "@/app/_lib/helper";
 import { format } from "date-fns";
-
+import Link from "next/link";
 async function page({ params }) {
   // { inventory, movements }
   const { productId, category } = await params;
@@ -27,7 +29,7 @@ async function page({ params }) {
     category,
   );
   const totalStockReceived = movements.reduce((total, movement) => {
-    if (movement.movement_type === "stock-in") {
+    if (movement.movement_type === "stock_in") {
       return total + Number(movement.quantity_boxes);
     }
 
@@ -41,7 +43,7 @@ async function page({ params }) {
       (movement) =>
         movement.product_id === inventory.product_id &&
         movement.category === inventory.category &&
-        movement.movement_type === "stock-in",
+        movement.movement_type === "stock_in",
     )
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 
@@ -55,11 +57,11 @@ async function page({ params }) {
         return item?.supplier_invoice?.invoice_number ?? "—";
       }
 
-      //   case "bill_item": {
-      //     const item = await getBillItemById(movement.reference_id);
+      case "bills": {
+        const item = await getBillById(movement.reference_id);
 
-      //     return item?.bill?.bill_number ?? "—";
-      //   }
+        return item?.invoice_number ?? "—";
+      }
 
       //   case "stock_adjustment": {
       //     const adjustment = await getStockAdjustmentById(movement.reference_id);
@@ -71,7 +73,26 @@ async function page({ params }) {
         return "—";
     }
   }
-  console.log(movements);
+
+  const movementRows = await Promise.all(
+    movements.map(async (movement) => {
+      const reference = await getMovementReference(movement);
+
+      const { boxes, cartons } = await convertBoxesIntoCartonAndBoxes(
+        movement.product_id,
+        movement.category,
+        movement.quantity_boxes,
+      );
+
+      return {
+        ...movement,
+        reference,
+        boxes,
+        cartons,
+      };
+    }),
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -96,12 +117,12 @@ async function page({ params }) {
           </div>
         </div>
 
-        <a
+        <Link
           href="/inventory"
           className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
           ← Back to Inventory
-        </a>
+        </Link>
       </div>
 
       {/* Summary Cards */}
@@ -172,16 +193,12 @@ async function page({ params }) {
             </thead>
 
             <tbody className="divide-y divide-slate-100">
-              {movements.length > 0 ? (
-                movements.map(async (movement) => {
-                  const isStockIn = movement.movement_type === "stock-in";
-                  const reference = await getMovementReference(movement);
-                  const { boxes, cartons } =
-                    await convertBoxesIntoCartonAndBoxes(
-                      movement.product_id,
-                      movement.category,
-                      movement.quantity_boxes,
-                    );
+              {movementRows.length > 0 ? (
+                movementRows.map((movement) => {
+                  const isStockIn = movement.movement_type === "stock_in";
+                  const reference = movement.reference;
+                  const boxes = movement.boxes;
+                  const cartons = movement.cartons;
                   return (
                     <tr
                       key={movement.id}
@@ -214,7 +231,7 @@ async function page({ params }) {
 
                       <td
                         className={`px-5 py-4 font-semibold   ${
-                          movement.movement_type === "stock-in"
+                          movement.movement_type === "stock_in"
                             ? "text-emerald-600"
                             : "text-red-600"
                         }`}

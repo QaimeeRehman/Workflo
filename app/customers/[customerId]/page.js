@@ -1,58 +1,27 @@
-import Info from "@/app/_components/Info";
-import { toCapitalize } from "@/app/_lib/helper";
+import CustomerAccountOverview from "@/app/_components/Customers/CustomerAccountOverview";
+import { getCustomerLedger } from "@/app/_lib/dataService";
 import { supabase } from "@/app/_lib/supabase";
-import Link from "next/link";
-import { format } from "date-fns";
-async function page({ params }) {
+async function page({ params, searchParams }) {
   const { customerId } = await params;
-
-  const { data: customer, error } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("id", customerId);
-
-  const { id, created_at, fullName, saleType, taxCategory, cnic, phone, area } =
-    customer[0];
-
+  const periodParams = await searchParams;
+  const period = periodParams?.period || "month";
+  const {
+    data: [customer],
+    error,
+  } = await supabase.from("customers").select("*").eq("id", customerId);
+  const { ledger, summary: ledgerSummary } = await getCustomerLedger(
+    customerId,
+    period,
+  );
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">
-            {toCapitalize(fullName)}
-          </h1>
-          <p className="mt-1 text-slate-500">Customer Details</p>
-        </div>
 
-        <Link
-          href={`/customers/${customerId}/edit`}
-          className="rounded-lg bg-primary-500 px-5 py-3 font-medium text-white hover:bg-primary-900"
-        >
-          Edit Customer
-        </Link>
-      </div>
-
-      {/* Customer Information */}
-      <div className="rounded-xl bg-white p-6 shadow">
-        <h2 className="mb-6 text-xl font-semibold">Customer Information</h2>
-
-        <div className="grid grid-cols-8 gap-12">
-          <span>
-            <Info label="Customer ID" value={id} />
-          </span>
-          <Info label="Phone" value={phone} />
-          <Info label="CNIC" value={cnic} />
-          <Info label="Sale Type" value={toCapitalize(saleType)} />
-          <Info label="Tax Category" value={toCapitalize(taxCategory)} />
-          <Info label="Area" value={toCapitalize(area)} />
-          <Info
-            label="Created At"
-            value={format(new Date(created_at), "MMM dd, yyyy")}
-          />
-        </div>
-      </div>
-
+      <CustomerAccountOverview
+        customer={customer}
+        ledger={ledger}
+        ledgerSummary={ledgerSummary}
+      />
       {/* Purchase History */}
       {/* <div className="overflow-hidden rounded-xl bg-white shadow">
         <div className="border-b px-6 py-4">

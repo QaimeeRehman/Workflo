@@ -562,6 +562,7 @@ import { auth } from "@/auth";
 import {
   getCustomerById,
   getProductContainsIds,
+  getProductPrice,
   getProductPricing,
 } from "../_lib/dataService";
 import { roundMoney } from "../_lib/helper";
@@ -621,11 +622,14 @@ export async function createBill(billData) {
   // FETCH PRODUCTS
   // --------------------------------------------------
 
+  // const productIds = items.map((item) => item.product_id);
   const productIds = items.map((item) => item.product_id);
 
-  const products = await getProductContainsIds(productIds);
+  const uniqueProductIds = [...new Set(productIds)];
 
-  if (products.length !== productIds.length) {
+  const products = await getProductContainsIds(uniqueProductIds);
+
+  if (products.length !== uniqueProductIds.length) {
     throw new Error("One or more products were not found");
   }
 
@@ -633,9 +637,28 @@ export async function createBill(billData) {
   // CALCULATE BILL ITEMS
   // --------------------------------------------------
 
+  const mergedItems = Object.values(
+    items.reduce((acc, item) => {
+      const key = `${item.product_id}-${item.category}`;
+
+      const quantityBoxes = Number(item.quantity_boxes);
+
+      if (!acc[key]) {
+        acc[key] = {
+          ...item,
+          quantity_boxes: quantityBoxes,
+        };
+      } else {
+        acc[key].quantity_boxes += quantityBoxes;
+      }
+
+      return acc;
+    }, {}),
+  );
+
   const billItems = [];
 
-  for (const item of items) {
+  for (const item of mergedItems) {
     const product = products.find((product) => product.id === item.product_id);
 
     if (!product) {
@@ -650,27 +673,19 @@ export async function createBill(billData) {
       );
     }
 
-    let price;
+    const data = await getProductPricing(product.id);
 
-    const data = await getProductPricing(product.type, product.id);
+    const saleType = sale_type === "cash_sale" ? "retail" : customer.saleType;
 
-    if (sale_type === "cash_sale") {
-      const priceKey =
-        product.type === "biscuit"
-          ? `${item.category}_retail_non-filer`
-          : "retail_non-filer";
+    const taxCategory =
+      sale_type === "cash_sale" ? "non_filer" : customer.taxCategory;
 
-      price = data[priceKey];
-    }
-
-    if (sale_type === "customer") {
-      const priceKey =
-        product.type === "biscuit"
-          ? `${item.category}_${customer.saleType}_${customer.taxCategory}`
-          : `${customer.saleType}_${customer.taxCategory}`;
-
-      price = data[priceKey];
-    }
+    const price = await getProductPrice(
+      product.id,
+      item.category,
+      saleType,
+      taxCategory,
+    );
 
     if (price == null) {
       throw new Error(
@@ -780,6 +795,10 @@ export async function createBill(billData) {
       discount: cleanDiscount,
       total,
       sale_type,
+      created_at: data.created_at,
+      customer,
+      payment_type,
+      amount_paid: cleanAmountPaid,
     },
 
     items: billItems,

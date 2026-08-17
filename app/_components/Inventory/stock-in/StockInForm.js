@@ -9,8 +9,9 @@ import StockNotes from "./StockNotes";
 import SupplierInvoiceInformation from "./SupplierInvoiceInformation";
 import { stockInFormAction } from "@/app/inventory/action";
 import StockItems from "./StockItems";
+import toast from "react-hot-toast";
 
-function StockInForm({ products, packaging }) {
+function StockInForm({ products, packaging, productTypes }) {
   const [items, setItems] = useState([
     {
       productId: "",
@@ -44,7 +45,27 @@ function StockInForm({ products, packaging }) {
     );
   }
 
-  const handleSubmit = stockInFormAction.bind(null, items);
+  async function handleSubmit(formData) {
+    const result = await stockInFormAction(items, formData);
+
+    if (result?.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    setItems([
+      {
+        productId: "",
+        category: "",
+        quantity: "",
+        unit: "carton",
+        costPerBox: "",
+      },
+    ]);
+
+    toast.success("Stock added successfully");
+  }
+  // const handleSubmit = stockInFormAction.bind(null, items);
 
   return (
     <form action={handleSubmit} className="rounded-xl bg-white shadow">
@@ -54,6 +75,7 @@ function StockInForm({ products, packaging }) {
       <StockItems
         products={products}
         packaging={packaging}
+        productTypes={productTypes}
         items={items}
         updateItem={updateItem}
         removeItem={removeItem}

@@ -6,32 +6,6 @@ import ProductTable from "../_components/Product/ProductTable";
 import { getAllProducts } from "../_lib/dataService";
 
 async function page() {
-  //   const products = [
-  //     {
-  //       id: 1,
-  //       name: "Sooper",
-  //       type: "Biscuit",
-  //       company: "Peak Freans",
-  //     },
-  //     {
-  //       id: 2,
-  //       name: "Gluco",
-  //       type: "Biscuit",
-  //       company: "Peak Freans",
-  //     },
-  //     {
-  //       id: 3,
-  //       name: "Rio Strawberry",
-  //       type: "Biscuit",
-  //       company: "Peak Freans",
-  //     },
-  //     {
-  //       id: 4,
-  //       name: "Cake Up RS 30",
-  //       type: "Cake",
-  //       company: "Peak Freans",
-  //     },
-  //   ];
   const products = await getAllProducts();
   const totalProducts = products.length;
   const typeCake = products.filter((product) => product.type === "cake");

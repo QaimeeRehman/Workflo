@@ -1,3 +1,4 @@
+import { getDatePeriodWise } from "./helper";
 import { supabase } from "./supabase";
 
 ///////////// CUSTOMER TABLE //////////////////
@@ -83,6 +84,25 @@ export async function getAllProducts() {
   return products;
 }
 
+export async function getProductTypes() {
+  const { data, error } = await supabase.from("product_types").select("*");
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function getProductTypeByValue(value) {
+  const {
+    data: [productType],
+    error,
+  } = await supabase.from("product_types").select("*").eq("value", value);
+
+  if (error) throw new Error(error.message);
+
+  return productType;
+}
+
 export async function getProductContainsIds(ids) {
   const { data: products, error: productsError } = await supabase
     .from("products")
@@ -97,35 +117,19 @@ export async function getProductContainsIds(ids) {
 
 export async function getAllProductsForBilling() {
   const { data, error } = await supabase.from("products").select(`
-      id,
-      name,
-      type,
-      pricing_biscuit (
-        tp_retail_filer,
-        tp_retail_non-filer,
-        tp_wholesale_filer,
-        tp_wholesale_non-filer,
-        sp_retail_filer,
-        sp_retail_non-filer,
-        sp_wholesale_filer,
-        sp_wholesale_non-filer,
-        mp_retail_filer,
-        mp_retail_non-filer,
-        mp_wholesale_filer,
-        mp_wholesale_non-filer,
-        hr_retail_filer,
-        hr_retail_non-filer,
-        hr_wholesale_filer,
-        hr_wholesale_non-filer
-      ),
-      pricing_cake (
-        retail_filer,
-        retail_non-filer,
-        wholesale_filer,
-        wholesale_non-filer
-      )
-    `);
+    id,
+    name,
+    type,
+    product_pricing (
+      category,
+      sale_type,
+      tax_category,
+      price
+    )
+  `);
+
   if (error) throw new Error(error.message);
+
   return data;
 }
 
@@ -151,15 +155,36 @@ export async function getProductsByQuery(query) {
   return data;
 }
 
-export async function getProductPricing(type, id) {
-  const {
-    data: [pricing],
-    error,
-  } = await supabase.from(`pricing_${type}`).select("*").eq("product_id", id);
+export async function getProductPricing(productId) {
+  const { data, error } = await supabase
+    .from("product_pricing")
+    .select("*")
+    .eq("product_id", productId)
+    .order("category");
 
   if (error) throw new Error(error.message);
 
-  return pricing;
+  return data;
+}
+
+export async function getProductPrice(
+  productId,
+  category,
+  saleType,
+  taxCategory,
+) {
+  const { data, error } = await supabase
+    .from("product_pricing")
+    .select("price")
+    .eq("product_id", productId)
+    .eq("category", category)
+    .eq("sale_type", saleType)
+    .eq("tax_category", taxCategory)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+
+  return data.price;
 }
 
 export async function getProductPackaging(id) {
@@ -201,7 +226,7 @@ export async function createNewProduct(newProduct) {
 export async function deleteProduct(id) {
   const { error } = await supabase.from("products").delete().eq("id", id);
 
-  if (error) throw new Error("product has not been deleted");
+  if (error) throw new Error(error.message);
 
   return error;
 }
@@ -267,7 +292,7 @@ export async function getAllInventory() {
 }
 
 export async function getFilteredInventory(search, ctg, stock, product_id) {
-  let query = supabase.from("inventory").select(`*,product:products (
+  let query = supabase.from("inventory").select(`*,product:products!inner (
     id,
     name
     )`);
@@ -296,7 +321,7 @@ export async function getFilteredInventory(search, ctg, stock, product_id) {
     query = query.eq("product_id", product_id);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw new Error("failed to filter data");
 
@@ -459,9 +484,10 @@ export async function convertBoxesIntoCartonAndBoxes(
     productId,
     productCateogory,
   );
-  const boxesPerCarton = productPackaging.boxes_per_carton;
-  const cartons = Math.floor(Number(quantity_boxes) / Number(boxesPerCarton));
-  const boxes = Number(quantity_boxes) % Number(boxesPerCarton);
+  const boxesPerCarton = Number(productPackaging.boxes_per_carton);
+  const quantity = Math.abs(Number(quantity_boxes));
+  const cartons = Math.floor(Number(quantity) / Number(boxesPerCarton));
+  const boxes = Number(quantity) % Number(boxesPerCarton);
 
   return { boxes, cartons };
 }
@@ -480,6 +506,54 @@ export async function createBills(bill) {
   return data;
 }
 
+export async function getBillById(id) {
+  const { data, error } = await supabase
+    .from("bills")
+    .select(
+      `
+      *,
+      customer:customers (
+        id,
+        fullName,
+        phone,
+        cnic
+      )
+    `,
+    )
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch bill: ${error.message}`);
+  }
+
+  return data;
+}
+
+export async function getBillByInvoiceNumber(invoiceNumber) {
+  const { data, error } = await supabase
+    .from("bills")
+    .select(
+      `
+     *,
+      customer:customers (
+        id,
+        fullName,
+        phone,
+        cnic
+      )
+    `,
+    )
+    .eq("invoice_number", invoiceNumber)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch bill: ${error.message}`);
+  }
+
+  return data;
+}
+
 ///////////// BILL_ITEMS TABLE //////////////////
 
 export async function createBillItems(billItems) {
@@ -487,6 +561,18 @@ export async function createBillItems(billItems) {
     .from("bill_items")
     .insert(billItems)
     .select();
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function getBillItemsByBillId(id) {
+  const { data, error } = await supabase
+    .from("bill_items")
+    .select("*")
+    .eq("bill_id", id)
+    .order("id", { ascending: true });
 
   if (error) throw new Error(error.message);
 
@@ -521,4 +607,166 @@ export async function createCustomerPayment(payment) {
   }
 
   return data;
+}
+
+///////////// CUSTOMER LEDGER //////////////////
+
+export async function getCustomerLedger(customerId, period = "month") {
+  const { from, to } = getDatePeriodWise(period);
+
+  let billsQuery = supabase
+    .from("bills")
+    .select(
+      `
+      id,
+      invoice_number,
+      total,
+      created_at
+    `,
+    )
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: true });
+
+  let paymentsQuery = supabase
+    .from("customer_payments")
+    .select(
+      `
+      id,
+      bill_id,
+      amount,
+      payment_method,
+      reference,
+      created_at
+    `,
+    )
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: true });
+
+  if (from) {
+    billsQuery = billsQuery.gte("created_at", from.toISOString());
+    paymentsQuery = paymentsQuery.gte("created_at", from.toISOString());
+  }
+
+  if (to) {
+    billsQuery = billsQuery.lte("created_at", to.toISOString());
+    paymentsQuery = paymentsQuery.lte("created_at", to.toISOString());
+  }
+
+  const [
+    { data: bills, error: billsError },
+    { data: payments, error: paymentsError },
+  ] = await Promise.all([billsQuery, paymentsQuery]);
+
+  if (billsError) {
+    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+  }
+
+  if (paymentsError) {
+    throw new Error(
+      `Failed to fetch customer payments: ${paymentsError.message}`,
+    );
+  }
+
+  // --------------------------------------------------
+  // GROUP PAYMENTS BY BILL
+  // --------------------------------------------------
+
+  const paymentsByBill = new Map();
+
+  for (const payment of payments) {
+    const currentAmount = paymentsByBill.get(payment.bill_id) ?? 0;
+
+    paymentsByBill.set(payment.bill_id, currentAmount + Number(payment.amount));
+  }
+
+  // --------------------------------------------------
+  // CREATE BILL TRANSACTIONS
+  // --------------------------------------------------
+
+  const transactions = bills.map((bill) => {
+    const paymentAmount = paymentsByBill.get(bill.id) ?? 0;
+    const billTotal = Number(bill.total);
+
+    const fullyPaid = paymentAmount >= billTotal;
+
+    return {
+      id: `bill-${bill.id}`,
+      date: bill.created_at,
+      reference: bill.invoice_number,
+
+      description: fullyPaid
+        ? "Cash Sale"
+        : paymentAmount > 0
+          ? "Partial Payment"
+          : "Sale",
+
+      debit: billTotal,
+      credit: paymentAmount,
+
+      type: "sale",
+      bill_id: bill.id,
+    };
+  });
+
+  // --------------------------------------------------
+  // PAYMENTS NOT ATTACHED TO A BILL IN THIS PERIOD
+  // --------------------------------------------------
+
+  for (const payment of payments) {
+    const billExists = bills.some((bill) => bill.id === payment.bill_id);
+
+    if (!billExists) {
+      transactions.push({
+        id: `payment-${payment.id}`,
+        date: payment.created_at,
+        reference: payment.reference || "—",
+        description: "Payment",
+        debit: 0,
+        credit: Number(payment.amount),
+        type: "payment",
+        bill_id: payment.bill_id,
+      });
+    }
+  }
+
+  // --------------------------------------------------
+  // SORT
+  // --------------------------------------------------
+
+  transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // --------------------------------------------------
+  // RUNNING BALANCE
+  // --------------------------------------------------
+
+  let balance = 0;
+
+  const ledger = transactions.map((transaction) => {
+    balance += transaction.debit - transaction.credit;
+
+    return {
+      ...transaction,
+      balance,
+    };
+  });
+
+  // --------------------------------------------------
+  // SUMMARY
+  // --------------------------------------------------
+
+  const totalSales = bills.reduce((sum, bill) => sum + Number(bill.total), 0);
+
+  const totalPaid = payments.reduce(
+    (sum, payment) => sum + Number(payment.amount),
+    0,
+  );
+
+  return {
+    ledger,
+    summary: {
+      totalSales,
+      totalPaid,
+      outstanding: totalSales - totalPaid,
+    },
+  };
 }

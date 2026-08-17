@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Package, ArrowLeft } from "lucide-react";
 import NewProductForm from "@/app/_components/Product/NewProductForm";
+import { getProductTypes } from "@/app/_lib/dataService";
 
-function page() {
+async function page() {
+  const productTypes = await getProductTypes();
   return (
     <div className="mx-auto min-w-[80vw] p-6">
       {/* Header */}
@@ -40,7 +42,7 @@ function page() {
       </div>
 
       {/* Form */}
-      <NewProductForm />
+      <NewProductForm productTypes={productTypes} />
     </div>
   );
 }

@@ -1,6 +1,13 @@
 import StockItem from "./StockItem";
 
-function StockItems({ products, packaging, items, updateItem, removeItem }) {
+function StockItems({
+  products,
+  packaging,
+  items,
+  updateItem,
+  removeItem,
+  productTypes,
+}) {
   return (
     <section className="border-b border-slate-200">
       <div className="space-y-4 p-5">
@@ -11,6 +18,7 @@ function StockItems({ products, packaging, items, updateItem, removeItem }) {
             item={item}
             products={products}
             packaging={packaging}
+            productTypes={productTypes}
             updateItem={updateItem}
             onRemove={items.length > 1 ? () => removeItem(index) : undefined}
           />

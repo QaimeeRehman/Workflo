@@ -1,17 +1,12 @@
-import Link from "next/link";
-import { ArrowLeft, Package, Save } from "lucide-react";
+import UpdateProductForm from "@/app/_components/Product/UpdateProductForm";
 import {
   getProductById,
   getProductPackaging,
   getProductPricing,
+  getProductTypeByValue,
 } from "@/app/_lib/dataService";
-import { updateProductAndPricing } from "../../action";
-import ProductInfo from "@/app/_components/Product/ProductInfo";
-import ProductPricingBiscuit from "@/app/_components/Product/ProductPricingBiscuit";
-import ProductPricingCake from "@/app/_components/Product/ProductPricingCake";
-import CRUDButton from "@/app/_components/CRUDButton";
-import ProductPackagingBiscuit from "@/app/_components/Product/ProductPackagingBiscuit";
-import UpdateProductForm from "@/app/_components/Product/UpdateProductForm";
+import { ArrowLeft, Package } from "lucide-react";
+import Link from "next/link";
 
 async function page({ params }) {
   const { productId } = await params;
@@ -19,8 +14,9 @@ async function page({ params }) {
   // const
   // fetching product for getting its price according to its type
   const product = await getProductById(productId);
-  const pricing = await getProductPricing(product.type, productId);
+  const pricing = await getProductPricing(productId);
   const productPackaging = await getProductPackaging(productId);
+  const productType = await getProductTypeByValue(product.type);
   const packaging = productPackaging.reduce((acc, item) => {
     acc[item.category.toLowerCase()] = {
       units_per_box: item.units_per_box,
@@ -29,7 +25,7 @@ async function page({ params }) {
 
     return acc;
   }, {});
-
+  console.log(productType);
   return (
     <div className="mx-auto  space-y-6 p-6">
       {/* Header */}
@@ -61,6 +57,7 @@ async function page({ params }) {
         product={product}
         pricing={pricing}
         packaging={packaging}
+        productType={productType}
       />
     </div>
   );

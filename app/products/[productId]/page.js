@@ -1,32 +1,23 @@
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Package,
-  Pencil,
-  CircleDollarSign,
-  Boxes,
-} from "lucide-react";
-import { supabase } from "@/app/_lib/supabase";
-import ProductPricing from "@/app/_components/Product/ProductPricingBiscuitView";
+import ProductPackagingView from "@/app/_components/Product/ProductPackagingView";
 import ProductPricingMessage from "@/app/_components/Product/ProductPricingMessage";
+import ProductPricingView from "@/app/_components/Product/ProductPricingView";
 import {
   getProductById,
   getProductPackaging,
   getProductPricing,
+  getProductTypeByValue,
 } from "@/app/_lib/dataService";
-import ProductPackaging from "@/app/_components/Product/ProductPackagingBiscuit";
-import ProductPackagingCakeView from "@/app/_components/Product/ProductPackagingCakeView";
-import ProductPackagingBiscuitView from "@/app/_components/Product/ProductPackagingBiscuitView";
 import { toCapitalize } from "@/app/_lib/helper";
-import ProductPricingBiscuitView from "@/app/_components/Product/ProductPricingBiscuitView";
-import ProductPricingCakeView from "@/app/_components/Product/ProductPricingCakeView";
+import { ArrowLeft, Package, Pencil } from "lucide-react";
+import Link from "next/link";
 
 async function page({ params }) {
   const { productId } = await params;
 
   const product = await getProductById(productId);
-  const pricing = await getProductPricing(product.type, productId);
+  const pricing = await getProductPricing(productId);
   const productPackaging = await getProductPackaging(productId);
+  const productType = await getProductTypeByValue(product.type);
   const packaging = productPackaging.reduce((acc, item) => {
     acc[item.category.toLowerCase()] = {
       units_per_box: item.units_per_box,
@@ -36,50 +27,52 @@ async function page({ params }) {
     return acc;
   }, {});
 
-  const pricingCategoryBiscuit = {
-    tp: {
-      retail_filer: pricing.tp_retail_filer,
-      "retail_non-filer": pricing["tp_retail_non-filer"],
-      wholesale_filer: pricing.tp_wholesale_filer,
-      "wholesale_non-filer": pricing["tp_wholesale_non-filer"],
+  const saleTypes = [
+    {
+      key: "retail_filer",
+      sale_type: "retail",
+      tax_category: "filer",
     },
-    sp: {
-      retail_filer: pricing.sp_retail_filer,
-      "retail_non-filer": pricing["sp_retail_non-filer"],
-      wholesale_filer: pricing.sp_wholesale_filer,
-      "wholesale_non-filer": pricing["sp_wholesale_non-filer"],
+    {
+      key: "retail_non_filer",
+      sale_type: "retail",
+      tax_category: "non_filer",
     },
-    mp: {
-      retail_filer: pricing.mp_retail_filer,
-      "retail_non-filer": pricing["mp_retail_non-filer"],
-      wholesale_filer: pricing.mp_wholesale_filer,
-      "wholesale_non-filer": pricing["mp_wholesale_non-filer"],
+    {
+      key: "wholesale_filer",
+      sale_type: "wholesale",
+      tax_category: "filer",
     },
-    hr: {
-      retail_filer: pricing.hr_retail_filer,
-      "retail_non-filer": pricing["hr_retail_non-filer"],
-      wholesale_filer: pricing.hr_wholesale_filer,
-      "wholesale_non-filer": pricing["hr_wholesale_non-filer"],
+    {
+      key: "wholesale_non_filer",
+      sale_type: "wholesale",
+      tax_category: "non_filer",
     },
-  };
+  ];
+  const pricingCategory = {};
 
-  const pricingCategoryCake = {
-    cake: {
-      retail_filer: pricing.retail_filer,
-      "retail_non-filer": pricing["retail_non-filer"],
-      wholesale_filer: pricing.wholesale_filer,
-      "wholesale_non-filer": pricing["wholesale_non-filer"],
-    },
-  };
+  productType.default_categories.forEach((category) => {
+    const key = category.toLowerCase();
 
-  const hasPricing = Object.values(
-    product.type === "cake" ? pricingCategoryCake : pricingCategoryBiscuit,
-  ).some((category) =>
+    pricingCategory[key] = {};
+
+    saleTypes.forEach(({ key: pricingKey, sale_type, tax_category }) => {
+      const pricingRow = pricing?.find(
+        (item) =>
+          item.category === key &&
+          item.sale_type === sale_type &&
+          item.tax_category === tax_category,
+      );
+
+      pricingCategory[key][pricingKey] = pricingRow?.price ?? null;
+    });
+  });
+
+  const hasPricing = Object.values(pricingCategory).some((category) =>
     Object.values(category).some(
       (price) => price !== null && price !== undefined,
     ),
   );
-  console.log(packaging);
   return (
     <div className="mx-auto min-w-[80vw]  space-y-6 p-6">
       {/* Back */}
@@ -143,30 +136,14 @@ async function page({ params }) {
         </div>
       </div>
 
-      {/* Pricing */}
-      {/* {pricing ? (
-        <ProductPricingBiscuitView pricing={pricingCategory} />
+      {hasPricing ? (
+        <ProductPricingView pricing={pricingCategory} />
       ) : (
-        <ProductPricingMessage />
-      )} */}
-
-      {product.type === "biscuit" && hasPricing && (
-        <ProductPricingBiscuitView pricing={pricingCategoryBiscuit} />
+        <ProductPricingMessage productId={productId} />
       )}
-      {product.type === "cake" && hasPricing && (
-        <ProductPricingCakeView pricing={pricingCategoryCake} />
-      )}
-      {!hasPricing && <ProductPricingMessage productId={productId} />}
-
-      {/* <ProductPricingMessage /> */}
 
       {/* Packaging */}
-      {product.type === "biscuit" && (
-        <ProductPackagingBiscuitView packaging={packaging} />
-      )}
-      {product.type === "cake" && (
-        <ProductPackagingCakeView packaging={packaging} />
-      )}
+      {product.type && <ProductPackagingView packaging={packaging} />}
     </div>
   );
 }

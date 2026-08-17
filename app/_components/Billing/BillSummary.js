@@ -57,27 +57,6 @@ function BillSummary() {
         </div>
       </div>
 
-      {/* Payment */}
-      {/* <div className="mt-7">
-        <p className="mb-3 text-sm font-medium text-slate-700">Payment Type</p>
-
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            className="rounded-lg border border-primary-500 bg-primary-50 px-3 py-3 text-sm font-medium text-primary-700"
-          >
-            Cash
-          </button>
-
-          <button
-            type="button"
-            className="rounded-lg border border-slate-300 px-3 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
-            Credit
-          </button>
-        </div>
-      </div> */}
-
       <BillingPayment total={total} subtotal={subtotal} />
       {/* Action */}
     </aside>

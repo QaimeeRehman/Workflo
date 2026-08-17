@@ -4,57 +4,6 @@ import { Plus, ShoppingCart } from "lucide-react";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
-const MOCK_PRODUCTS = [
-  {
-    id: 1,
-    name: "Sooper",
-    type: "biscuit",
-    packaging: {
-      tp: { boxes_per_carton: 8 },
-      sp: { boxes_per_carton: 6 },
-      mp: { boxes_per_carton: 10 },
-      hr: { boxes_per_carton: 12 },
-    },
-    prices: {
-      tp: {
-        retailer_filer: 330,
-        retailer_nonFiler: 340,
-        wholesale_filer: 320,
-        wholesale_nonFiler: 330,
-      },
-      sp: {
-        retailer_filer: 295,
-        retailer_nonFiler: 305,
-        wholesale_filer: 285,
-        wholesale_nonFiler: 295,
-      },
-    },
-  },
-  {
-    id: 2,
-    name: "Gluco",
-    type: "biscuit",
-    packaging: {
-      tp: { boxes_per_carton: 8 },
-      sp: { boxes_per_carton: 6 },
-    },
-    prices: {
-      tp: {
-        retailer_filer: 300,
-        retailer_nonFiler: 310,
-        wholesale_filer: 290,
-        wholesale_nonFiler: 300,
-      },
-      sp: {
-        retailer_filer: 270,
-        retailer_nonFiler: 280,
-        wholesale_filer: 260,
-        wholesale_nonFiler: 270,
-      },
-    },
-  },
-];
-
 function BillingProduct({ products, inventory, packagings }) {
   const customer = useBillingStore((state) => state.customer);
   const saleType = useBillingStore((state) => state.saleType);
@@ -73,7 +22,7 @@ function BillingProduct({ products, inventory, packagings }) {
       selectedProduct?.id === packaging.product_id &&
       category === packaging.category,
   );
-
+  console.log(selectedPackaging);
   const inventoryMap = new Map();
 
   inventory.forEach((item) => {
@@ -92,41 +41,34 @@ function BillingProduct({ products, inventory, packagings }) {
   const currentPrice = useMemo(() => {
     if (!selectedProduct || !category) return 0;
 
-    let priceKeyBiscuit;
-    let priceKeyCake;
+    if (saleType === "customer" && !customer) return 0;
 
-    if (saleType === "customer") {
-      if (!customer) return 0;
-      priceKeyBiscuit = `${category}_${customer.saleType}_${customer.taxCategory}`;
-      priceKeyCake = `${customer.saleType}_${customer.taxCategory}`;
-    }
+    const saleTypeValue =
+      saleType === "cash_sale" ? "retail" : customer.saleType;
 
-    if (saleType === "cash_sale") {
-      priceKeyBiscuit = `${category}_retail_non-filer`;
-      priceKeyCake = `retail_non-filer`;
-    }
+    const taxCategory =
+      saleType === "cash_sale" ? "non_filer" : customer.taxCategory;
 
-    const priceKey =
-      selectedProduct.type === "biscuit" ? priceKeyBiscuit : priceKeyCake;
-    console.log(priceKey);
-    return (
-      selectedProduct[`pricing_${selectedProduct.type}`]?.[0]?.[priceKey] ?? 0
+    const pricingRow = selectedProduct.product_pricing?.find(
+      (pricing) =>
+        pricing.category === category &&
+        pricing.sale_type === saleTypeValue &&
+        pricing.tax_category === taxCategory,
     );
-  }, [selectedProduct, category, customer, saleType]);
 
+    return Number(pricingRow?.price ?? 0);
+  }, [selectedProduct, category, customer, saleType]);
   const selectedInventory = inventory.find(
     (item) =>
       String(item?.product_id) === String(selectedProduct?.id) &&
       item.category === category,
   );
 
-  const availableBoxes = Number(selectedInventory?.quantity_boxes ?? 0);
-  const availableCarton = Math.trunc(
-    Number(selectedInventory?.quantity_boxes ?? 0) /
-      selectedPackaging?.boxes_per_carton,
-  );
+  const stockBoxes = Number(selectedInventory?.quantity_boxes ?? 0);
 
-  const alreadyInBill = items
+  const boxesPerCarton = Number(selectedPackaging?.boxes_per_carton ?? 0);
+
+  const billBoxes = items
     .filter(
       (item) =>
         String(item.product_id) === String(selectedProduct?.id) &&
@@ -134,9 +76,10 @@ function BillingProduct({ products, inventory, packagings }) {
     )
     .reduce((sum, item) => sum + Number(item.quantity_boxes), 0);
 
-  const remainingStockInBox = availableBoxes - alreadyInBill;
-  const remainingStockInCarton =
-    Number(remainingStockInBox) / Number(selectedPackaging?.boxes_per_carton);
+  const remainingBoxes = Math.max(0, stockBoxes - billBoxes);
+
+  const remainingCartons =
+    boxesPerCarton > 0 ? Math.floor(remainingBoxes / boxesPerCarton) : 0;
   function handleAddItem() {
     if (!customer && saleType === "customer") {
       toast.error("Please select a customer first.");
@@ -262,8 +205,8 @@ function BillingProduct({ products, inventory, packagings }) {
               <span className="text-xs font-medium text-slate-500">
                 Available:{" "}
                 {unit === "box"
-                  ? `${remainingStockInBox || availableBoxes} boxes`
-                  : `${remainingStockInCarton || availableCarton} carton`}
+                  ? `${remainingBoxes} boxes`
+                  : `${Math.trunc(remainingCartons)} carton`}
               </span>
             )}
           </div>
@@ -271,7 +214,9 @@ function BillingProduct({ products, inventory, packagings }) {
           <input
             type="number"
             min="1"
-            max={unit === "box" ? availableBoxes : availableCarton}
+            max={
+              unit === "box" ? remainingBoxes || stockBoxes : remainingCartons
+            }
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             placeholder="Enter quantity"
@@ -279,12 +224,12 @@ function BillingProduct({ products, inventory, packagings }) {
           />
 
           {Number(quantity) >
-            (unit === "box" ? availableBoxes : availableCarton) && (
+            (unit === "box" ? remainingBoxes : remainingCartons) && (
             <p className="mt-1 text-sm text-red-600">
               Only{" "}
               {unit === "box"
-                ? `${availableBoxes} boxes`
-                : `${availableCarton} carton`}{" "}
+                ? `${remainingBoxes} boxes`
+                : `${remainingCartons} carton`}{" "}
               available in stock.
             </p>
           )}

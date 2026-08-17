@@ -1,10 +1,11 @@
 import {
   convertBoxesIntoCartonAndBoxes,
+  getBillById,
   getSupplierInvoiceItemById,
 } from "@/app/_lib/dataService";
 import { toCapitalize } from "@/app/_lib/helper";
 import { format } from "date-fns";
-import MovementsPagination from "./MovementsPagination";
+import Link from "next/link";
 
 function MovementsTable({ movements }) {
   async function getMovementReference(movement) {
@@ -15,11 +16,11 @@ function MovementsTable({ movements }) {
         return item?.supplier_invoice?.invoice_number ?? "—";
       }
 
-      //   case "bill_item": {
-      //     const item = await getBillItemById(movement.reference_id);
-
-      //     return item?.bill?.bill_number ?? "—";
-      //   }
+      case "bills": {
+        const item = await getBillById(movement.reference_id);
+        console.log(item);
+        return item?.invoice_number ?? "—";
+      }
 
       //   case "stock_adjustment": {
       //     const adjustment = await getStockAdjustmentById(movement.reference_id);
@@ -84,11 +85,11 @@ function MovementsTable({ movements }) {
                   product={toCapitalize(mov.product.name)}
                   category={mov.category}
                   movement={mov.movement_type}
-                  cartons={`${mov.movement_type === "stock-in" ? "+" : "-"}${cartons}`}
-                  boxes={`${mov.movement_type === "stock-in" ? "+" : "-"}${boxes}`}
+                  cartons={`${mov.movement_type === "stock_in" ? "+" : ""}${cartons}`}
+                  boxes={`${mov.movement_type === "stock_in" ? "+" : ""}${boxes}`}
                   cost={mov.cost_per_box}
                   reference={reference}
-                  type={mov.movement_type.split("-").pop()}
+                  type={mov.movement_type.split("_").pop()}
                   created_by={toCapitalize(mov.user.fullName)}
                 />
               );
@@ -96,9 +97,6 @@ function MovementsTable({ movements }) {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
-      <MovementsPagination />
     </div>
   );
 }
@@ -150,7 +148,7 @@ function MovementRow({
           type === "in" ? "text-emerald-600" : "text-red-600"
         }`}
       >
-        <p className="font-semibold">{cartons} cartons</p>
+        {cartons > 0 && <p className="font-semibold">{cartons} cartons</p>}
 
         {Number(boxes) > 0 && <p className="mt-1 text-xs">{boxes} boxes</p>}
       </td>

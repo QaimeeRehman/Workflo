@@ -67,59 +67,6 @@ const EMPTY_ITEM = {
 };
 
 function BillingPage({ customers, products, packagings, inventory }) {
-  // const currentPrice = useMemo(() => {
-  //   if (!customer || !selectedProduct || !category) return 0;
-
-  //   const priceKey = `${customer.saleType}_${customer.taxCategory}`;
-
-  //   return selectedProduct.prices?.[category]?.[priceKey] ?? 0;
-  // }, [customer, selectedProduct, category]);
-
-  function addItem() {
-    // if (!customer) {
-    //   toast.error("Please select a customer first.");
-    //   return;
-    // }
-    // if (!productId || !category || !quantity) {
-    //   toast.error("Please complete product information.");
-    //   return;
-    // }
-    // const quantityNumber = Number(quantity);
-    // if (!Number.isInteger(quantityNumber) || quantityNumber <= 0) {
-    //   toast.error("Quantity must be a positive integer.");
-    //   return;
-    // }
-    // if (!currentPrice) {
-    //   alert("Price is not available.");
-    //   return;
-    // }
-    // const packaging = selectedProduct.packaging[category];
-    // const quantityBoxes =
-    //   unit === "carton"
-    //     ? quantityNumber * packaging.boxes_per_carton
-    //     : quantityNumber;
-    // const newItem = {
-    //   id: crypto.randomUUID(),
-    //   productId: selectedProduct.id,
-    //   productName: selectedProduct.name,
-    //   category,
-    //   quantity: quantityNumber,
-    //   unit,
-    //   quantityBoxes,
-    //   pricePerBox: currentPrice,
-    //   total: quantityBoxes * currentPrice,
-    // };
-    // setItems((prev) => [...prev, newItem]);
-    // setProductId("");
-    // setCategory("");
-    // setQuantity("");
-    // setUnit("box");
-  }
-
-  function removeItem(id) {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  }
-
   return (
     <div className="mx-auto min-w-[80vw] space-y-6">
       {/* Header */}
@@ -141,14 +88,7 @@ function BillingPage({ customers, products, packagings, inventory }) {
         </div>
 
         {/* Right Summary */}
-        <BillSummary
-        // customer={customer}
-        // items={items}
-        // subtotal={subtotal}
-        // discount={discount}
-        // setDiscount={setDiscount}
-        // total={total}
-        />
+        <BillSummary />
       </div>
     </div>
   );

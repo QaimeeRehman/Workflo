@@ -3,11 +3,11 @@ import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 function MovementsSummary({ movements }) {
   const totalMovements = movements.length;
   const boxesAdded = movements.reduce((acc, mov) => {
-    if (mov.movement_type === "stock-in") return acc + mov.quantity_boxes;
+    if (mov.movement_type === "stock_in") return acc + mov.quantity_boxes;
     return acc;
   }, 0);
   const boxesRemoved = movements.reduce((acc, mov) => {
-    if (mov.movement_type === "stock-out")
+    if (mov.movement_type !== "stock_in")
       return acc + Math.abs(mov.quantity_boxes);
     return acc;
   }, 0);

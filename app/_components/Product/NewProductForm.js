@@ -5,12 +5,11 @@ import toast from "react-hot-toast";
 import CRUDButton from "../CRUDButton";
 import { useState } from "react";
 
-function NewProductForm() {
+function NewProductForm({ productTypes }) {
   const [productType, setProductType] = useState("");
-  let categories = [];
-
-  if (productType === "biscuit") categories = ["TP", "SP", "MP", "HR"];
-  if (productType === "cake") categories = ["CAKE"];
+  let categories =
+    productTypes.find((type) => type.value === productType)
+      ?.default_categories || [];
 
   async function handleSubmit(formData) {
     const { data, error } = await createNewProductAction(formData);
@@ -71,8 +70,13 @@ function NewProductForm() {
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
             >
               <option value="">Select product type</option>
-              <option value="biscuit">Biscuit</option>
-              <option value="cake">Cake</option>
+              {productTypes.map((type) => (
+                <option key={type.id} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+              {/* <option value="biscuit">Biscuit</option>
+              <option value="cake">Cake</option> */}
             </select>
 
             <p className="mt-2 text-xs text-slate-500">

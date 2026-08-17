@@ -3,9 +3,11 @@
 import { roundMoney } from "@/app/_lib/helper";
 import { useBillingStore } from "@/app/_store/billingStore";
 import { createBill } from "@/app/billing/action";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-function BillingPayment({ total, subtotal }) {
+function BillingPayment({ total }) {
+  const router = useRouter();
   const paymentType = useBillingStore((state) => state.paymentType);
   const amountReceived = useBillingStore((state) => state.amountReceived);
   const saleType = useBillingStore((state) => state.saleType);
@@ -70,7 +72,8 @@ function BillingPayment({ total, subtotal }) {
       setItems([]);
       setDiscount(0);
       setPaymentType("cash");
-      setAmountPaid(0);
+      setAmountReceived(0);
+      router.push(`/billing/${result.bill.invoice_number}`);
     } catch (error) {
       toast.error(error.message);
     }

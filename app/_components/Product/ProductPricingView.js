@@ -1,6 +1,6 @@
 import { CircleDollarSign } from "lucide-react";
 
-function ProductPricingBiscuitView({ pricing }) {
+function ProductPricingView({ pricing }) {
   return (
     <div className="rounded-2xl bg-white shadow">
       <div className="flex items-center gap-3 border-b p-6">
@@ -19,7 +19,7 @@ function ProductPricingBiscuitView({ pricing }) {
 
       <div className="p-6">
         {/* Pricing Header */}
-        <div className="mb-3 grid grid-cols-5  rounded-lg bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600">
+        <div className="mb-3 grid grid-cols-5 rounded-lg bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-600">
           <div>Category</div>
           <div>Retail Filer</div>
           <div>Retail Non-Filer</div>
@@ -28,7 +28,7 @@ function ProductPricingBiscuitView({ pricing }) {
         </div>
 
         {/* Pricing Rows */}
-        {Object.entries(pricing).map(([category, prices]) => (
+        {Object.entries(pricing ?? {}).map(([category, prices]) => (
           <div
             key={category}
             className="grid grid-cols-5 items-center border-b px-5 py-4 last:border-0"
@@ -40,9 +40,9 @@ function ProductPricingBiscuitView({ pricing }) {
             </div>
 
             <Price value={prices.retail_filer} />
-            <Price value={prices["retail_non-filer"]} />
+            <Price value={prices.retail_non_filer} />
             <Price value={prices.wholesale_filer} />
-            <Price value={prices["wholesale_non-filer"]} />
+            <Price value={prices.wholesale_non_filer} />
           </div>
         ))}
       </div>
@@ -53,8 +53,9 @@ function ProductPricingBiscuitView({ pricing }) {
 function Price({ value }) {
   return (
     <div className="font-semibold text-slate-800">
-      {value > 0 ? `Rs. ${value.toFixed(2)}` : "—"}
+      {value != null ? `Rs. ${Number(value).toFixed(2)}` : "—"}
     </div>
   );
 }
-export default ProductPricingBiscuitView;
+
+export default ProductPricingView;

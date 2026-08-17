@@ -1,25 +1,4 @@
-function ProductPackaging({ packaging }) {
-  // const packaging = {
-  //   tp: {
-  //     units_per_box: 12,
-  //     boxes_per_carton: 8,
-  //   },
-
-  //   sp: {
-  //     units_per_box: 24,
-  //     boxes_per_carton: 6,
-  //   },
-
-  //   mp: {
-  //     units_per_box: 12,
-  //     boxes_per_carton: 10,
-  //   },
-
-  //   hr: {
-  //     units_per_box: 6,
-  //     boxes_per_carton: 12,
-  //   },
-  // };
+function ProductPackaging({ packaging, categories }) {
   return (
     <div className="rounded-2xl bg-white shadow">
       {/* Header */}
@@ -41,31 +20,25 @@ function ProductPackaging({ packaging }) {
             <div>Units per Box</div>
             <div>Boxes per Carton</div>
           </div>
-          <PackagingRow
-            category="TP"
-            unitsPerBox={packaging.tp.units_per_box}
-            boxesPerCarton={packaging.tp.boxes_per_carton}
-          />
-          <PackagingRow
-            category="SP"
-            unitsPerBox={packaging.sp.units_per_box}
-            boxesPerCarton={packaging.sp.boxes_per_carton}
-          />
-          <PackagingRow
-            category="MP"
-            unitsPerBox={packaging.mp.units_per_box}
-            boxesPerCarton={packaging.mp.boxes_per_carton}
-          />
-          <PackagingRow
-            category="HR"
-            unitsPerBox={packaging.hr.units_per_box}
-            boxesPerCarton={packaging.hr.boxes_per_carton}
-          />
+
+          {categories.map((category) => {
+            const key = category.toLowerCase();
+
+            return (
+              <PackagingRow
+                key={key}
+                category={category}
+                unitsPerBox={packaging?.[key]?.units_per_box}
+                boxesPerCarton={packaging?.[key]?.boxes_per_carton}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
+
 function PackagingRow({ category, unitsPerBox, boxesPerCarton }) {
   const key = category.toLowerCase();
 
