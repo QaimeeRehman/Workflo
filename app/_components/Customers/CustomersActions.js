@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteCustomerAction } from "@/app/customers/action";
+import { deleteCustomerAction } from "@/app/dashboard/customers/action";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -18,22 +18,22 @@ function CustomersActions({ customerId }) {
     <td className="px-6 py-4">
       <div className="flex justify-center gap-2">
         <Link
-          href={`/customers/${customerId}`}
-          className="rounded-md bg-slate-100 px-3 py-1 hover:bg-slate-200"
+          href={`/dashboard/customers/${customerId}`}
+          className="rounded-md bg-slate-200 px-3 py-1 hover:bg-slate-300"
         >
           View
         </Link>
 
         <Link
-          href={`/customers/${customerId}/edit`}
-          className="rounded-md bg-yellow-100 px-3 py-1 text-yellow-700 hover:bg-yellow-200"
+          href={`/dashboard/customers/${customerId}/edit`}
+          className="rounded-md bg-primary-500 px-3 py-1 text-white hover:bg-primary-900"
         >
           Edit
         </Link>
 
         <button
           onClick={handleDelete}
-          className="rounded-md bg-red-100 px-3 py-1 text-red-700 hover:bg-red-200"
+          className="rounded-md bg-red-500 px-3 py-1 text-white hover:bg-red-600"
         >
           Delete
         </button>

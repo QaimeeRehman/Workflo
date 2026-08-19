@@ -6,7 +6,8 @@ function CustomerLedgerRow({ entry }) {
   const router = useRouter();
   const isSale = entry.type === "sale";
   function handleClick() {
-    router.push(`/billing/${entry.reference}`);
+    if (entry.reference !== "—")
+      router.push(`/dashboard/billing/${entry.reference}`);
   }
   return (
     <tr onClick={handleClick} className="transition hover:bg-slate-50">

@@ -1,8 +1,7 @@
 "use client";
 
-import { roundMoney } from "@/app/_lib/helper";
 import { useBillingStore } from "@/app/_store/billingStore";
-import { createBill } from "@/app/billing/action";
+import { createBill } from "@/app/dashboard/billing/action";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -73,7 +72,7 @@ function BillingPayment({ total }) {
       setDiscount(0);
       setPaymentType("cash");
       setAmountReceived(0);
-      router.push(`/billing/${result.bill.invoice_number}`);
+      router.push(`/dashboard/billing/${result.bill.invoice_number}`);
     } catch (error) {
       toast.error(error.message);
     }

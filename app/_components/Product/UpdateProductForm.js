@@ -1,6 +1,6 @@
 "use client";
 
-import { updateProductAndPricingAction } from "@/app/products/action";
+import { updateProductAndPricingAction } from "@/app//dashboard/products/action";
 import { Save } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -27,7 +27,7 @@ function UpdateProductForm({ product, pricing, packaging, productType }) {
     } catch (error) {
       console.log(error);
     }
-    redirect(`/products/${product.id}`);
+    redirect(`/dashboard/products/${product.id}`);
   }
   return (
     <form action={handleSubmit} className="space-y-6">

@@ -2,7 +2,7 @@ import ProductTableRow from "./ProductTableRow";
 
 function PricingTable({ products }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-white shadow">
+    <div className="overflow-hidden rounded-xl bg-white shadow-[0_0_6px_0_rgba(0,0,0,0.12)]">
       <table className="w-full">
         <thead className="bg-slate-50">
           <tr className="border-b">

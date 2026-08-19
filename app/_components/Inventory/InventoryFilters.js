@@ -19,7 +19,7 @@ function InventoryFilters() {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
   return (
-    <div className="rounded-xl bg-white p-5 shadow">
+    <div className="rounded-xl bg-white p-5 shadow-[0_0_6px_0_rgba(0,0,0,0.12)]">
       <div className="flex gap-4">
         <input
           onChange={(e) => {

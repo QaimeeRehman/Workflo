@@ -3,7 +3,7 @@
 import {
   createCustomerAction,
   updateCustomerAction,
-} from "@/app/customers/action";
+} from "@/app/dashboard/customers/action";
 import toast from "react-hot-toast";
 import NewCustomerFormActions from "./NewCustomerFormActions";
 import { redirect } from "next/navigation";
@@ -33,7 +33,7 @@ function NewCustomerForm({ customer }) {
     }
 
     toast.success("Customer updated successfully");
-    redirect("/customers");
+    redirect("/dashboard/customers");
   }
 
   return (
@@ -108,7 +108,7 @@ function NewCustomerForm({ customer }) {
               defaultValue={customer?.area ?? ""}
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
             >
-              <option value="markeet">Market</option>
+              <option value="market">Market</option>
               <option value="tando bagho road">Tando Bagho Road</option>
               <option value="yousafabad">Yousafabad</option>
               <option value="jillani mohallah">Jillani Mohallah</option>

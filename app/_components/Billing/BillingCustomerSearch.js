@@ -119,7 +119,8 @@ import { useBillingStore } from "@/app/_store/billingStore";
 import { Search, User, Banknote } from "lucide-react";
 import { useState } from "react";
 
-function BillingCustomerSearch({ customers }) {
+function BillingCustomerSearch({ customers, customerBalances }) {
+  console.log(customers);
   const [customerSearch, setCustomerSearch] = useState("");
 
   const customer = useBillingStore((state) => state.customer);
@@ -128,6 +129,8 @@ function BillingCustomerSearch({ customers }) {
   const setCustomer = useBillingStore((state) => state.setCustomer);
   const setSaleType = useBillingStore((state) => state.setSaleType);
   const setItems = useBillingStore((state) => state.setItems);
+
+  // const customerOutstanding = customerBalances.get(customer?.id);
 
   const customerResults = customers.filter((item) =>
     `${item.fullName} ${item.phone}`
@@ -248,6 +251,20 @@ function BillingCustomerSearch({ customers }) {
             <p className="mt-1 text-sm capitalize text-slate-500">
               {customer.saleType} · {customer.taxCategory}
             </p>
+
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-sm text-slate-500">Credit balance:</span>
+
+              <span
+                className={`font-semibold ${
+                  Number(customer.outstanding) > 0
+                    ? "text-red-600"
+                    : "text-emerald-600"
+                }`}
+              >
+                Rs. {Number(customer.outstanding ?? 0).toLocaleString()}
+              </span>
+            </div>
           </div>
 
           <button

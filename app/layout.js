@@ -1,9 +1,6 @@
 import { Toaster } from "react-hot-toast";
-import Header from "./_components/Header";
-import Navbar from "./_components/Navbar";
 import "./globals.css";
-
-export default function RootLayout({ children }) {
+function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="min-h-full flex flex-col">
@@ -47,12 +44,10 @@ export default function RootLayout({ children }) {
             },
           }}
         />
-        <div id="no-print">
-          <Header />
-          <Navbar />
-        </div>
-        <div className="mx-auto p-8">{children}</div>
+        {children}
       </body>
     </html>
   );
 }
+
+export default RootLayout;

@@ -5,7 +5,6 @@ import CustomerRecentActivity from "./CustomerRecentActivity";
 import { toCapitalize } from "@/app/_lib/helper";
 
 function CustomerAccountOverview({ customer, ledger, ledgerSummary }) {
-  console.log(ledger);
   return (
     <div className="space-y-6 max-w-[80vw]">
       {/* Customer Information */}

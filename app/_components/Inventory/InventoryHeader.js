@@ -12,7 +12,7 @@ function InventoryHeader() {
 
       <div className="flex gap-3">
         <Link
-          href="/inventory/movements"
+          href="/dashboard/inventory/movements"
           className="rounded-lg border border-slate-300 bg-white px-5 py-3
               font-medium text-slate-700 transition hover:bg-slate-50"
         >
@@ -20,7 +20,7 @@ function InventoryHeader() {
         </Link>
 
         <Link
-          href="/inventory/stock-in"
+          href="/dashboard/inventory/stock-in"
           className="rounded-lg bg-primary-500 px-5 py-3
               font-medium text-white transition hover:bg-primary-900"
         >

@@ -84,3 +84,54 @@ export function getDatePeriodWise(period) {
 export function roundMoney(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
+
+export function buildMonthlySales(bills, now) {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const salesByDay = Array.from({ length: daysInMonth }, (_, index) => ({
+    label: String(index + 1),
+    sales: 0,
+  }));
+
+  for (const bill of bills) {
+    const date = new Date(bill.created_at);
+
+    if (date.getFullYear() !== year || date.getMonth() !== month) {
+      continue;
+    }
+
+    const day = date.getDate();
+
+    salesByDay[day - 1].sales += Number(bill.total) || 0;
+  }
+
+  return salesByDay;
+}
+
+export function buildYearlySales(bills, now) {
+  const year = now.getFullYear();
+
+  const salesByMonth = Array.from({ length: 12 }, (_, index) => ({
+    label: new Date(year, index, 1).toLocaleString("en-US", {
+      month: "short",
+    }),
+    sales: 0,
+  }));
+
+  for (const bill of bills) {
+    const date = new Date(bill.created_at);
+
+    if (date.getFullYear() !== year) {
+      continue;
+    }
+
+    const month = date.getMonth();
+
+    salesByMonth[month].sales += Number(bill.total) || 0;
+  }
+
+  return salesByMonth;
+}

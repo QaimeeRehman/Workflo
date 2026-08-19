@@ -1,52 +1,58 @@
 "use client";
 
-import Link from "next/link";
 import {
-  LayoutDashboard,
-  Receipt,
-  Package,
-  Boxes,
-  Users,
   BarChart3,
+  Boxes,
+  LayoutDashboard,
+  Package,
+  Receipt,
   Settings,
+  Users,
+  Wallet,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 function Navbar() {
   return (
     <nav className=" bg-slate-50">
       <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-2 p-8">
-        <NavItem href="/">
+        <NavItem href="/dashboard">
           <LayoutDashboard size={18} />
           Dashboard
         </NavItem>
 
-        <NavItem href="/billing">
+        <NavItem href="/dashboard/billing">
           <Receipt size={18} />
           Billing
         </NavItem>
 
-        <NavItem href="/customers">
+        <NavItem href="/dashboard/customers">
           <Users size={18} />
           Customers
         </NavItem>
 
-        <NavItem href="/products">
-          <Package size={18} />
-          Products
+        <NavItem href="/dashboard/expenses">
+          <Wallet size={18} />
+          Expenses
         </NavItem>
 
-        <NavItem href="/inventory">
+        <NavItem href="/dashboard/inventory">
           <Boxes size={18} />
           Inventory
         </NavItem>
 
-        <NavItem href="/reports">
+        <NavItem href="/dashboard/products">
+          <Package size={18} />
+          Products
+        </NavItem>
+
+        <NavItem href="/dashboard/reports">
           <BarChart3 size={18} />
           Reports
         </NavItem>
 
-        <NavItem href="/settings" extraClasses="ml-auto">
+        <NavItem href="/dashboard/settings" extraClasses="ml-auto">
           <Settings size={18} />
           Settings
         </NavItem>

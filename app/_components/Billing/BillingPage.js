@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import BillingHeader from "./BillingHeader";
 import BillingCustomerSearch from "./BillingCustomerSearch";
+import BillingHeader from "./BillingHeader";
 import BillingProduct from "./BillingProduct";
 import BillItem from "./BillItem";
-import toast from "react-hot-toast";
 import BillSummary from "./BillSummary";
 
 const MOCK_PRODUCTS = [
@@ -66,9 +64,15 @@ const EMPTY_ITEM = {
   unit: "box",
 };
 
-function BillingPage({ customers, products, packagings, inventory }) {
+function BillingPage({
+  customers,
+  products,
+  packagings,
+  inventory,
+  customerBalances,
+}) {
   return (
-    <div className="mx-auto min-w-[80vw] space-y-6">
+    <div className="mx-auto  space-y-6">
       {/* Header */}
       <BillingHeader />
       {/* Main Billing Area */}
@@ -76,7 +80,10 @@ function BillingPage({ customers, products, packagings, inventory }) {
         {/* Left */}
         <div className="space-y-6">
           {/* Customer */}
-          <BillingCustomerSearch customers={customers} />
+          <BillingCustomerSearch
+            customers={customers}
+            customerBalances={customerBalances}
+          />
           {/* Product */}
           <BillingProduct
             products={products}

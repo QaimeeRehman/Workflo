@@ -1,4 +1,8 @@
-import { getDatePeriodWise } from "./helper";
+import {
+  buildMonthlySales,
+  buildYearlySales,
+  getDatePeriodWise,
+} from "./helper";
 import { supabase } from "./supabase";
 
 ///////////// CUSTOMER TABLE //////////////////
@@ -29,7 +33,6 @@ export async function getCustomerById(id) {
     .single();
 
   if (customerError) throw new Error("Customer not found");
-
   return customer;
 }
 
@@ -41,6 +44,41 @@ export async function getAllCustomers() {
   if (error) throw new Error(error.message);
 
   return customers;
+}
+
+export async function getCustomersWithOutstanding() {
+  const { data: customers, error: customerError } = await supabase
+    .from("customers")
+    .select("*");
+
+  if (customerError) throw new Error(customerError.message);
+
+  const { data: bills, error: billError } = await supabase
+    .from("bills")
+    .select("customer_id, total");
+
+  if (billError) throw new Error(billError.message);
+
+  const { data: payments, error: paymentError } = await supabase
+    .from("customer_payments")
+    .select("customer_id, amount");
+
+  if (paymentError) throw new Error(paymentError.message);
+
+  return customers.map((customer) => {
+    const totalBills = bills
+      .filter((bill) => bill.customer_id === customer.id)
+      .reduce((sum, bill) => sum + Number(bill.total || 0), 0);
+
+    const totalPayments = payments
+      .filter((payment) => payment.customer_id === customer.id)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+    return {
+      ...customer,
+      outstanding: totalBills - totalPayments,
+    };
+  });
 }
 
 export async function createNewCustomer(newCustomer) {
@@ -455,25 +493,6 @@ export async function getInventoryMovement() {
 
   return inventoryMovement;
 }
-// export async function getInventoryByProductIdAndCategory(id, ctg) {
-//   let query = supabase.from("inventory").select("*");
-
-//   if (id) {
-//     query = query.eq("product_id", Number(id));
-//   }
-
-//   if (ctg) {
-//     query = query.eq("category", ctg);
-//   }
-
-//   const { data, error } = await query;
-
-//   if (error) throw new Error("Inventory is not found");
-
-//   return data;
-// }
-
-/////////////////////////////helper
 
 export async function convertBoxesIntoCartonAndBoxes(
   productId,
@@ -526,6 +545,17 @@ export async function getBillById(id) {
   if (error) {
     throw new Error(`Failed to fetch bill: ${error.message}`);
   }
+
+  return data;
+}
+
+export async function getCustomersbills() {
+  const { data, error } = await supabase
+    .from("bills")
+    .select("*")
+    .eq("sale_type", "customer");
+
+  if (error) throw new Error("Failed to fetch customer bills for total sales");
 
   return data;
 }
@@ -611,7 +641,7 @@ export async function createCustomerPayment(payment) {
 
 ///////////// CUSTOMER LEDGER //////////////////
 
-export async function getCustomerLedger(customerId, period = "month") {
+export async function getCustomerLedger(customerId, period) {
   const { from, to } = getDatePeriodWise(period);
 
   let billsQuery = supabase
@@ -769,4 +799,613 @@ export async function getCustomerLedger(customerId, period = "month") {
       outstanding: totalSales - totalPaid,
     },
   };
+}
+
+export async function getCustomerOutstandingSummary(customers) {
+  const [
+    { data: bills, error: billsError },
+    { data: payments, error: paymentsError },
+  ] = await Promise.all([
+    supabase
+      .from("bills")
+      .select("customer_id, total")
+      .not("customer_id", "is", null),
+
+    supabase
+      .from("customer_payments")
+      .select("customer_id, amount")
+      .not("customer_id", "is", null),
+  ]);
+
+  if (billsError) {
+    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+  }
+
+  if (paymentsError) {
+    throw new Error(
+      `Failed to fetch customer payments: ${paymentsError.message}`,
+    );
+  }
+
+  const salesByCustomer = new Map();
+
+  for (const bill of bills) {
+    const customerId = bill.customer_id;
+
+    salesByCustomer.set(
+      customerId,
+      (salesByCustomer.get(customerId) ?? 0) + Number(bill.total ?? 0),
+    );
+  }
+
+  const paymentsByCustomer = new Map();
+
+  for (const payment of payments) {
+    const customerId = payment.customer_id;
+
+    paymentsByCustomer.set(
+      customerId,
+      (paymentsByCustomer.get(customerId) ?? 0) + Number(payment.amount ?? 0),
+    );
+  }
+
+  const customerBalances = new Map();
+
+  for (const customer of customers) {
+    const totalSales = salesByCustomer.get(customer.id) ?? 0;
+    const totalPaid = paymentsByCustomer.get(customer.id) ?? 0;
+
+    customerBalances.set(customer.id, {
+      totalSales,
+      totalPaid,
+      outstanding: totalSales - totalPaid,
+    });
+  }
+
+  // ------------------------------------------
+  // BUSINESS SUMMARY
+  // ------------------------------------------
+
+  let totalOutstanding = 0;
+  let customersOwing = 0;
+
+  for (const balance of customerBalances.values()) {
+    if (balance.outstanding > 0) {
+      totalOutstanding += balance.outstanding;
+      customersOwing++;
+    }
+  }
+
+  // ------------------------------------------
+  // OUTSTANDING BY AREA
+  // ------------------------------------------
+
+  const areaMap = new Map();
+
+  for (const customer of customers) {
+    const balance = customerBalances.get(customer.id);
+
+    if (!balance || balance.outstanding <= 0) continue;
+
+    const area = customer.area || "Unknown";
+
+    if (!areaMap.has(area)) {
+      areaMap.set(area, {
+        area,
+        outstanding: 0,
+        customersOwing: 0,
+      });
+    }
+
+    const areaData = areaMap.get(area);
+
+    areaData.outstanding += balance.outstanding;
+    areaData.customersOwing += 1;
+  }
+
+  const outstandingByArea = Array.from(areaMap.values())
+    .sort((a, b) => b.outstanding - a.outstanding)
+    .map((item) => ({
+      ...item,
+      percentage:
+        totalOutstanding > 0 ? (item.outstanding / totalOutstanding) * 100 : 0,
+    }));
+
+  return {
+    summary: {
+      totalCustomers: customers.length,
+      customersOwing,
+      totalOutstanding,
+    },
+
+    outstandingByArea,
+
+    customerBalances,
+  };
+}
+
+///////////// EXPENSE TABLE //////////////////
+
+export async function getExpenses() {
+  const { data, error } = await supabase.from("expenses").select("*");
+
+  if (error) throw new Error("Failed to fetch expenses");
+
+  return data;
+}
+
+export async function getExpensesById(id) {
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error("Failed to fetch expense by it's id");
+
+  return data;
+}
+
+export async function createExpense(expense) {
+  const { data, error } = await supabase.from("expenses").insert(expense);
+
+  if (error) throw new Error("Failed to create expense");
+
+  return data;
+}
+
+export async function updateExpense(id, expense) {
+  const { data, error } = await supabase
+    .from("expenses")
+    .update(expense)
+    .eq("id", id);
+
+  if (error) throw new Error("Failed to update expense");
+
+  return data;
+}
+
+export async function deleteExpense(id) {
+  const { data, error } = await supabase.from("expenses").delete().eq("id", id);
+
+  if (error) throw new Error("Failed to delete expense");
+
+  return data;
+}
+
+// dashboard
+
+export async function getDashboardSummary(period) {
+  const { from, to } = getDatePeriodWise(period);
+
+  // --------------------------------------------------
+  // BILLS
+  // --------------------------------------------------
+
+  let billsQuery = supabase.from("bills").select("id, total, customer_id");
+
+  if (from) {
+    billsQuery = billsQuery.gte("created_at", from.toISOString());
+  }
+
+  if (to) {
+    billsQuery = billsQuery.lte("created_at", to.toISOString());
+  }
+
+  // --------------------------------------------------
+  // EXPENSES
+  // Use expense_date, not created_at
+  // --------------------------------------------------
+
+  let expensesQuery = supabase.from("expenses").select("amount");
+
+  if (from) {
+    expensesQuery = expensesQuery.gte("expense_date", from.toISOString());
+  }
+
+  if (to) {
+    expensesQuery = expensesQuery.lte("expense_date", to.toISOString());
+  }
+
+  // --------------------------------------------------
+  // CUSTOMER PAYMENTS
+  // Current outstanding is lifetime/current balance,
+  // so don't apply the dashboard period here.
+  // --------------------------------------------------
+
+  const customerBillsQuery = supabase
+    .from("bills")
+    .select("customer_id, total")
+    .not("customer_id", "is", null);
+
+  const customerPaymentsQuery = supabase
+    .from("customer_payments")
+    .select("customer_id, amount");
+
+  // --------------------------------------------------
+  // RUN INITIAL QUERIES
+  // --------------------------------------------------
+
+  const [
+    { data: bills, error: billsError },
+    { data: expenses, error: expensesError },
+    { data: customerBills, error: customerBillsError },
+    { data: customerPayments, error: customerPaymentsError },
+  ] = await Promise.all([
+    billsQuery,
+    expensesQuery,
+    customerBillsQuery,
+    customerPaymentsQuery,
+  ]);
+
+  if (billsError) {
+    throw new Error(`Failed to fetch dashboard bills: ${billsError.message}`);
+  }
+
+  if (expensesError) {
+    throw new Error(
+      `Failed to fetch dashboard expenses: ${expensesError.message}`,
+    );
+  }
+
+  if (customerBillsError) {
+    throw new Error(
+      `Failed to fetch customer bills: ${customerBillsError.message}`,
+    );
+  }
+
+  if (customerPaymentsError) {
+    throw new Error(
+      `Failed to fetch customer payments: ${customerPaymentsError.message}`,
+    );
+  }
+
+  // --------------------------------------------------
+  // SALES
+  // --------------------------------------------------
+
+  const totalSales = bills.reduce(
+    (sum, bill) => sum + Number(bill.total || 0),
+    0,
+  );
+
+  const cashSales = bills
+    .filter((bill) => bill.customer_id === null)
+    .reduce((sum, bill) => sum + Number(bill.total || 0), 0);
+
+  const customerSales = bills
+    .filter((bill) => bill.customer_id !== null)
+    .reduce((sum, bill) => sum + Number(bill.total || 0), 0);
+
+  // --------------------------------------------------
+  // BILL COUNTS
+  // --------------------------------------------------
+
+  const billCount = bills.length;
+
+  const cashBillCount = bills.filter(
+    (bill) => bill.customer_id === null,
+  ).length;
+
+  const customerBillCount = bills.filter(
+    (bill) => bill.customer_id !== null,
+  ).length;
+
+  // --------------------------------------------------
+  // EXPENSES
+  // --------------------------------------------------
+
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + Number(expense.amount || 0),
+    0,
+  );
+
+  // --------------------------------------------------
+  // CURRENT CUSTOMER OUTSTANDING
+  // --------------------------------------------------
+
+  const customerSalesTotal = customerBills.reduce(
+    (sum, bill) => sum + Number(bill.total || 0),
+    0,
+  );
+
+  const customerPaymentsTotal = customerPayments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0,
+  );
+
+  const outstanding = customerSalesTotal - customerPaymentsTotal;
+
+  const customerBalances = new Map();
+
+  for (const bill of customerBills) {
+    const customerId = bill.customer_id;
+
+    const current = customerBalances.get(customerId) ?? 0;
+
+    customerBalances.set(customerId, current + Number(bill.total || 0));
+  }
+
+  for (const payment of customerPayments) {
+    const customerId = payment.customer_id;
+
+    const current = customerBalances.get(customerId) ?? 0;
+
+    customerBalances.set(customerId, current - Number(payment.amount || 0));
+  }
+
+  const outstandingCustomerCount = [...customerBalances.values()].filter(
+    (balance) => balance > 0,
+  ).length;
+
+  // --------------------------------------------------
+  // GET BILL IDS FOR COGS
+  // --------------------------------------------------
+
+  const billIds = bills.map((bill) => bill.id);
+
+  let cogs = 0;
+
+  if (billIds.length > 0) {
+    const { data: movements, error: movementsError } = await supabase
+      .from("inventory_movement")
+      .select(
+        "quantity_boxes, cost_per_box, reference_id, reference_type, movement_type",
+      )
+      .eq("reference_type", "bills")
+      .eq("movement_type", "sale")
+      .in("reference_id", billIds);
+
+    if (movementsError) {
+      throw new Error(
+        `Failed to fetch inventory movements: ${movementsError.message}`,
+      );
+    }
+
+    cogs = movements.reduce((sum, movement) => {
+      const quantity = Math.abs(Number(movement.quantity_boxes || 0));
+
+      const costPerBox = Number(movement.cost_per_box || 0);
+
+      return sum + quantity * costPerBox;
+    }, 0);
+  }
+
+  // --------------------------------------------------
+  // PROFIT
+  // --------------------------------------------------
+
+  const grossProfit = totalSales - cogs;
+
+  const netProfit = grossProfit - totalExpenses;
+
+  const netProfitMargin = totalSales > 0 ? (netProfit / totalSales) * 100 : 0;
+
+  // --------------------------------------------------
+  // RETURN
+  // --------------------------------------------------
+
+  return {
+    totalSales,
+    cashSales,
+    customerSales,
+
+    outstanding,
+    outstandingCustomerCount,
+
+    totalExpenses,
+
+    cogs,
+    grossProfit,
+    netProfit,
+    netProfitMargin,
+
+    billCount,
+    cashBillCount,
+    customerBillCount,
+  };
+}
+
+export async function getCustomersOwing(limit = 5) {
+  const { data: bills, error: billsError } = await supabase
+    .from("bills")
+    .select(
+      `
+      customer_id,
+      total,
+      customers (
+        id,
+        fullName
+      )
+    `,
+    )
+    .not("customer_id", "is", null);
+
+  if (billsError) {
+    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+  }
+
+  const { data: payments, error: paymentsError } = await supabase.from(
+    "customer_payments",
+  ).select(`
+      customer_id,
+      amount
+    `);
+
+  if (paymentsError) {
+    throw new Error(
+      `Failed to fetch customer payments: ${paymentsError.message}`,
+    );
+  }
+
+  // ---------------------------------------------
+  // Calculate balance per customer
+  // ---------------------------------------------
+
+  const customerMap = new Map();
+
+  for (const bill of bills) {
+    if (!bill.customer_id) continue;
+
+    const existing = customerMap.get(bill.customer_id);
+
+    if (existing) {
+      existing.balance += Number(bill.total || 0);
+    } else {
+      customerMap.set(bill.customer_id, {
+        id: bill.customer_id,
+        name: bill.customers?.fullName ?? "Unknown Customer",
+        balance: Number(bill.total || 0),
+      });
+    }
+  }
+
+  for (const payment of payments) {
+    if (!payment.customer_id) continue;
+
+    const customer = customerMap.get(payment.customer_id);
+
+    if (customer) {
+      customer.balance -= Number(payment.amount || 0);
+    }
+  }
+
+  // ---------------------------------------------
+  // Only customers who currently owe money
+  // ---------------------------------------------
+
+  return [...customerMap.values()]
+    .filter((customer) => customer.balance > 0)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, limit);
+}
+
+export async function getRecentBills(limit = 5) {
+  const { data, error } = await supabase
+    .from("bills")
+    .select(
+      `
+      *,
+      customers(
+      fullName
+      )
+    `,
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function getRecentPayments(limit = 5) {
+  const { data, error } = await supabase
+    .from("customer_payments")
+    .select(
+      `
+      id,
+      amount,
+      payment_method,
+      customers(
+      fullName
+      )
+    `,
+    )
+    .is("bill_id", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
+
+export async function getDashboardSales(period = "month") {
+  const now = new Date();
+
+  let startDate;
+  let endDate;
+
+  if (period === "year") {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date(now.getFullYear() + 1, 0, 1);
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  }
+
+  const { data, error } = await supabase
+    .from("bills")
+    .select("created_at, total")
+    .gte("created_at", startDate.toISOString())
+    .lt("created_at", endDate.toISOString())
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("getDashboardSales:", error);
+    throw new Error("Failed to fetch dashboard sales");
+  }
+
+  if (period === "year") {
+    return buildYearlySales(data, now);
+  }
+
+  return buildMonthlySales(data, now);
+}
+
+// reports
+export async function getBillsReport({
+  search = "",
+  from = "",
+  to = "",
+  paymentType = "all",
+} = {}) {
+  let query = supabase
+    .from("bills")
+    .select(
+      `
+      id,
+      created_at,
+      invoice_number,
+      subtotal,
+      discount,
+      total,
+      sale_type,
+      payment_type,
+      amount_paid,
+      customers(
+        fullName
+      )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (from) {
+    query = query.gte("created_at", `${from}T00:00:00`);
+  }
+
+  if (to) {
+    query = query.lte("created_at", `${to}T23:59:59`);
+  }
+
+  if (paymentType !== "all") {
+    query = query.eq("payment_type", paymentType);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  if (!search) return data;
+
+  const searchTerm = search?.replaceAll(" ", "").toLowerCase();
+
+  return data.filter((bill) => {
+    const invoice = bill.invoice_number?.toLowerCase() ?? "";
+    const customer =
+      bill.customers?.fullName?.replaceAll(" ", "")?.toLowerCase() ?? "";
+
+    return invoice.includes(searchTerm) || customer.includes(searchTerm);
+  });
 }

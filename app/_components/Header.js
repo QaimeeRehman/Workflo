@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import Logo from "./Logo";
 
 async function Header() {
-  const { user } = await auth();
-  const nameInitials = user.name
+  const session = await auth();
+  const nameInitials = session?.user?.name
     .split(" ")
     .map((init) => init[0])
     .join("")
@@ -20,8 +20,10 @@ async function Header() {
             </div>
 
             <div>
-              <p className="font-semibold text-slate-800">{user.name}</p>
-              <p className="text-xs text-slate-500">{user.role}</p>
+              <p className="font-semibold text-slate-800">
+                {session?.user.name}
+              </p>
+              <p className="text-xs text-slate-500">{session?.user.role}</p>
             </div>
           </div>
         </div>
