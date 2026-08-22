@@ -229,7 +229,7 @@ export async function createNewProductAction(formData) {
     throw new Error(pricingError.message);
   }
 
-  redirect(`/products/${product.id}`);
+  redirect(`/dashboard/products/${product.id}`);
 }
 
 export async function updateProductAndPricingAction(formData) {

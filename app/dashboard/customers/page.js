@@ -1,14 +1,13 @@
-import Link from "next/link";
 import CustomersFilters from "@/app/_components/Customers/CustomersFilters";
 import CustomersLedgerSummary from "@/app/_components/Customers/CustomersLedgerSummary";
 import CustomersOutstandingByArea from "@/app/_components/Customers/CustomersOutstandingByArea";
 import CustomerTable from "@/app/_components/Customers/CustomerTable";
 import {
-  getAllCustomers,
   getCustomerOutstandingSummary,
   getCustomersbills,
   getCustomersWithOutstanding,
 } from "@/app/_lib/dataService";
+import Link from "next/link";
 async function page({ searchParams }) {
   const params = await searchParams;
   const search = params.search ?? "";

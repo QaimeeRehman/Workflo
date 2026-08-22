@@ -10,7 +10,7 @@ function ProductPricingMessage({ productId }) {
       </p>
 
       <Link
-        href={`/products/${productId}/edit`}
+        href={`/dashboard/products/${productId}/edit`}
         className="mt-4 inline-block rounded-lg bg-primary-500 px-4 py-2 text-white"
       >
         Add Pricing

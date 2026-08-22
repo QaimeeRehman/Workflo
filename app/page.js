@@ -3,6 +3,6 @@ import { redirect } from "next/navigation";
 async function page() {
   const session = await auth();
   if (!session) redirect("/login");
-  return <div>Main Page</div>;
+  redirect("/dashboard");
 }
 export default page;

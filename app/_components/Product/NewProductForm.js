@@ -1,9 +1,9 @@
 "use client";
-import { createNewProductAction } from "@/app/products/action";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import CRUDButton from "../CRUDButton";
 import { useState } from "react";
+import { createNewProductAction } from "@/app/dashboard/products/action";
 
 function NewProductForm({ productTypes }) {
   const [productType, setProductType] = useState("");
@@ -150,7 +150,7 @@ function NewProductForm({ productTypes }) {
                       id={`${category}-units`}
                       name={`${category.toLowerCase()}_units_per_box`}
                       type="number"
-                      min="1"
+                      min="0"
                       placeholder="e.g. 12"
                       required
                       className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
@@ -170,7 +170,7 @@ function NewProductForm({ productTypes }) {
                       id={`${category}-carton`}
                       name={`${category.toLowerCase()}_boxes_per_carton`}
                       type="number"
-                      min="1"
+                      min="0"
                       placeholder="e.g. 8"
                       required
                       className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"

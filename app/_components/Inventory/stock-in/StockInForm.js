@@ -1,15 +1,12 @@
 "use client";
 
+import { stockInFormAction } from "@/app/dashboard/inventory/action";
 import { useState } from "react";
-import CostInformation from "./CostInformation";
-import ProductInformation from "./ProductInformation";
-import QuantityInformation from "./QuantityInformation";
+import toast from "react-hot-toast";
 import StockInActions from "./StockInActions";
+import StockItems from "./StockItems";
 import StockNotes from "./StockNotes";
 import SupplierInvoiceInformation from "./SupplierInvoiceInformation";
-import { stockInFormAction } from "@/app/inventory/action";
-import StockItems from "./StockItems";
-import toast from "react-hot-toast";
 
 function StockInForm({ products, packaging, productTypes }) {
   const [items, setItems] = useState([

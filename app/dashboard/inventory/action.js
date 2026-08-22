@@ -1,8 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getPackagingByIdAndCategory } from "../_lib/dataService";
-import { supabase } from "../_lib/supabase";
+import { getPackagingByIdAndCategory } from "@/app/_lib/dataService";
+import { supabase } from "@/app/_lib/supabase";
 
 export async function stockInFormAction(items, formData) {
   try {

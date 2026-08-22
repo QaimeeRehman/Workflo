@@ -19,9 +19,15 @@ function BillingPrintableInvoice({ bill, items }) {
   console.log(bill);
 
   const isWalkIn = !customer;
-  const amount_paid =
-    bill.payment_type === "credit" ? 0 : Number(bill.amount_paid ?? bill.total);
 
+  const totalAmount = Number(total ?? 0);
+  const amountPaid = Number(bill.amount_paid ?? 0);
+
+  const remainingAmount = Math.max(
+    0,
+    Number((totalAmount - amountPaid).toFixed(2)),
+  );
+  console.log(bill);
   return (
     <div id="printable-invoice" className="invoice-print">
       {/* Header */}
@@ -114,10 +120,15 @@ function BillingPrintableInvoice({ bill, items }) {
             </strong>
           </div>
 
-          {payment_type !== "credit" && (
+          <div className="payment-row">
+            <span>Amount Paid</span>
+            <strong>Rs. {bill.amount_paid}</strong>
+          </div>
+
+          {!isWalkIn && (
             <div className="payment-row">
-              <span>Amount Paid</span>
-              <strong>Rs. {amount_paid}</strong>
+              <span>Remaining</span>
+              <strong>Rs. {remainingAmount.toLocaleString()}</strong>
             </div>
           )}
 

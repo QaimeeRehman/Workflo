@@ -9,7 +9,7 @@ async function page({ params, searchParams }) {
     customerId,
     period,
   );
-
+  console.log(ledger, ledgerSummary);
   return (
     <div className="space-y-6">
       {/* Header */}

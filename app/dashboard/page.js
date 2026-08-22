@@ -30,7 +30,6 @@ async function page({ searchParams }) {
     getDashboardSales("month"),
     getDashboardSales("year"),
   ]);
-
   return (
     <div className="space-y-6">
       <DashboardHeader />

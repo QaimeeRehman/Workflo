@@ -302,12 +302,11 @@ function formatMoney(value) {
 
 async function Page({ params }) {
   const { invoiceNumber } = await params;
-  // console.log(invoiceNumber);
+
   const bill = await getBillByInvoiceNumber(invoiceNumber);
   const items = await getBillItemsByBillId(bill.id);
-  console.log(bill);
-  const amountPaid =
-    bill.payment_type === "credit" ? 0 : Number(bill.amount_paid ?? bill.total);
+
+  const amountPaid = Number(bill.amount_paid ?? 0);
 
   const change =
     bill.payment_type === "cash"
@@ -485,6 +484,17 @@ async function Page({ params }) {
                   {formatMoney(amountPaid)}
                 </span>
               </div>
+              {bill.customer && (
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500">Remaining</span>
+
+                  <span className="font-semibold text-slate-700">
+                    {formatMoney(
+                      Math.max(0, Number(bill.total ?? 0) - amountPaid),
+                    )}
+                  </span>
+                </div>
+              )}
               {bill.payment_type === "cash" && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Change</span>

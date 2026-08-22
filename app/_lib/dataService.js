@@ -46,6 +46,41 @@ export async function getAllCustomers() {
   return customers;
 }
 
+// export async function getCustomersWithOutstanding() {
+//   const { data: customers, error: customerError } = await supabase
+//     .from("customers")
+//     .select("*");
+
+//   if (customerError) throw new Error(customerError.message);
+
+//   const { data: bills, error: billError } = await supabase
+//     .from("bills")
+//     .select("customer_id, total");
+
+//   if (billError) throw new Error(billError.message);
+
+//   const { data: payments, error: paymentError } = await supabase
+//     .from("customer_payments")
+//     .select("customer_id, amount");
+
+//   if (paymentError) throw new Error(paymentError.message);
+
+//   return customers.map((customer) => {
+//     const totalBills = bills
+//       .filter((bill) => bill.customer_id === customer.id)
+//       .reduce((sum, bill) => sum + Number(bill.total || 0), 0);
+
+//     const totalPayments = payments
+//       .filter((payment) => payment.customer_id === customer.id)
+//       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+//     return {
+//       ...customer,
+//       outstanding: totalBills - totalPayments,
+//     };
+//   });
+// }
+
 export async function getCustomersWithOutstanding() {
   const { data: customers, error: customerError } = await supabase
     .from("customers")
@@ -55,28 +90,23 @@ export async function getCustomersWithOutstanding() {
 
   const { data: bills, error: billError } = await supabase
     .from("bills")
-    .select("customer_id, total");
+    .select("customer_id, total, amount_paid")
+    .not("customer_id", "is", null);
 
   if (billError) throw new Error(billError.message);
 
-  const { data: payments, error: paymentError } = await supabase
-    .from("customer_payments")
-    .select("customer_id, amount");
-
-  if (paymentError) throw new Error(paymentError.message);
-
   return customers.map((customer) => {
-    const totalBills = bills
+    const outstanding = bills
       .filter((bill) => bill.customer_id === customer.id)
-      .reduce((sum, bill) => sum + Number(bill.total || 0), 0);
-
-    const totalPayments = payments
-      .filter((payment) => payment.customer_id === customer.id)
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+      .reduce(
+        (sum, bill) =>
+          sum + (Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0)),
+        0,
+      );
 
     return {
       ...customer,
-      outstanding: totalBills - totalPayments,
+      outstanding,
     };
   });
 }
@@ -560,6 +590,45 @@ export async function getCustomersbills() {
   return data;
 }
 
+export async function getCustomerOutstandingBills(customerId) {
+  const { data, error } = await supabase
+    .from("bills")
+    .select(
+      `
+      id,
+      invoice_number,
+      created_at,
+      total,
+      amount_paid,
+      payment_type
+    `,
+    )
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `Failed to fetch customer outstanding bills: ${error.message}`,
+    );
+  }
+
+  return (data ?? [])
+    .map((bill) => {
+      const total = Number(bill.total ?? 0);
+      const amountPaid = Number(bill.amount_paid ?? 0);
+
+      const outstanding = Number((total - amountPaid).toFixed(2));
+
+      return {
+        ...bill,
+        total,
+        amount_paid: amountPaid,
+        outstanding,
+      };
+    })
+    .filter((bill) => bill.outstanding > 0);
+}
+
 export async function getBillByInvoiceNumber(invoiceNumber) {
   const { data, error } = await supabase
     .from("bills")
@@ -698,72 +767,55 @@ export async function getCustomerLedger(customerId, period) {
   }
 
   // --------------------------------------------------
-  // GROUP PAYMENTS BY BILL
-  // --------------------------------------------------
-
-  const paymentsByBill = new Map();
-
-  for (const payment of payments) {
-    const currentAmount = paymentsByBill.get(payment.bill_id) ?? 0;
-
-    paymentsByBill.set(payment.bill_id, currentAmount + Number(payment.amount));
-  }
-
-  // --------------------------------------------------
   // CREATE BILL TRANSACTIONS
   // --------------------------------------------------
 
-  const transactions = bills.map((bill) => {
-    const paymentAmount = paymentsByBill.get(bill.id) ?? 0;
-    const billTotal = Number(bill.total);
+  const transactions = bills.map((bill) => ({
+    id: `bill-${bill.id}`,
+    date: bill.created_at,
+    reference: bill.invoice_number,
+    description: "Sale",
 
-    const fullyPaid = paymentAmount >= billTotal;
+    debit: Number(bill.total ?? 0),
+    credit: 0,
 
-    return {
-      id: `bill-${bill.id}`,
-      date: bill.created_at,
-      reference: bill.invoice_number,
-
-      description: fullyPaid
-        ? "Cash Sale"
-        : paymentAmount > 0
-          ? "Partial Payment"
-          : "Sale",
-
-      debit: billTotal,
-      credit: paymentAmount,
-
-      type: "sale",
-      bill_id: bill.id,
-    };
-  });
+    type: "sale",
+    bill_id: bill.id,
+  }));
 
   // --------------------------------------------------
-  // PAYMENTS NOT ATTACHED TO A BILL IN THIS PERIOD
+  // CREATE PAYMENT TRANSACTIONS
   // --------------------------------------------------
 
   for (const payment of payments) {
-    const billExists = bills.some((bill) => bill.id === payment.bill_id);
+    transactions.push({
+      id: `payment-${payment.id}`,
+      date: payment.created_at,
 
-    if (!billExists) {
-      transactions.push({
-        id: `payment-${payment.id}`,
-        date: payment.created_at,
-        reference: payment.reference || "—",
-        description: "Payment",
-        debit: 0,
-        credit: Number(payment.amount),
-        type: "payment",
-        bill_id: payment.bill_id,
-      });
-    }
+      // Show the invoice if payment belongs to a bill
+      reference: payment.bill_id
+        ? bills.find((bill) => bill.id === payment.bill_id)?.invoice_number ||
+          payment.reference ||
+          "Payment"
+        : payment.reference || "Payment",
+
+      description: "Payment",
+
+      debit: 0,
+      credit: Number(payment.amount ?? 0),
+
+      type: "payment",
+      bill_id: payment.bill_id,
+    });
   }
 
   // --------------------------------------------------
   // SORT
   // --------------------------------------------------
 
-  transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+  transactions.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 
   // --------------------------------------------------
   // RUNNING BALANCE
@@ -784,15 +836,19 @@ export async function getCustomerLedger(customerId, period) {
   // SUMMARY
   // --------------------------------------------------
 
-  const totalSales = bills.reduce((sum, bill) => sum + Number(bill.total), 0);
+  const totalSales = bills.reduce(
+    (sum, bill) => sum + Number(bill.total ?? 0),
+    0,
+  );
 
   const totalPaid = payments.reduce(
-    (sum, payment) => sum + Number(payment.amount),
+    (sum, payment) => sum + Number(payment.amount ?? 0),
     0,
   );
 
   return {
     ledger,
+
     summary: {
       totalSales,
       totalPaid,
@@ -802,64 +858,55 @@ export async function getCustomerLedger(customerId, period) {
 }
 
 export async function getCustomerOutstandingSummary(customers) {
-  const [
-    { data: bills, error: billsError },
-    { data: payments, error: paymentsError },
-  ] = await Promise.all([
-    supabase
-      .from("bills")
-      .select("customer_id, total")
-      .not("customer_id", "is", null),
+  const { data: bills, error } = await supabase
+    .from("bills")
+    .select("customer_id, total, amount_paid")
+    .not("customer_id", "is", null);
 
-    supabase
-      .from("customer_payments")
-      .select("customer_id, amount")
-      .not("customer_id", "is", null),
-  ]);
-
-  if (billsError) {
-    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+  if (error) {
+    throw new Error(`Failed to fetch customer bills: ${error.message}`);
   }
 
-  if (paymentsError) {
-    throw new Error(
-      `Failed to fetch customer payments: ${paymentsError.message}`,
-    );
-  }
+  // ------------------------------------------
+  // CALCULATE BALANCE PER CUSTOMER
+  // ------------------------------------------
 
-  const salesByCustomer = new Map();
+  const customerBalances = new Map();
 
   for (const bill of bills) {
     const customerId = bill.customer_id;
 
-    salesByCustomer.set(
-      customerId,
-      (salesByCustomer.get(customerId) ?? 0) + Number(bill.total ?? 0),
-    );
+    const total = Number(bill.total ?? 0);
+    const amountPaid = Number(bill.amount_paid ?? 0);
+    const outstanding = total - amountPaid;
+
+    const existing = customerBalances.get(customerId);
+
+    if (existing) {
+      existing.totalSales += total;
+      existing.totalPaid += amountPaid;
+      existing.outstanding += outstanding;
+    } else {
+      customerBalances.set(customerId, {
+        totalSales: total,
+        totalPaid: amountPaid,
+        outstanding,
+      });
+    }
   }
 
-  const paymentsByCustomer = new Map();
-
-  for (const payment of payments) {
-    const customerId = payment.customer_id;
-
-    paymentsByCustomer.set(
-      customerId,
-      (paymentsByCustomer.get(customerId) ?? 0) + Number(payment.amount ?? 0),
-    );
-  }
-
-  const customerBalances = new Map();
+  // ------------------------------------------
+  // ADD CUSTOMERS WITH NO BILLS
+  // ------------------------------------------
 
   for (const customer of customers) {
-    const totalSales = salesByCustomer.get(customer.id) ?? 0;
-    const totalPaid = paymentsByCustomer.get(customer.id) ?? 0;
-
-    customerBalances.set(customer.id, {
-      totalSales,
-      totalPaid,
-      outstanding: totalSales - totalPaid,
-    });
+    if (!customerBalances.has(customer.id)) {
+      customerBalances.set(customer.id, {
+        totalSales: 0,
+        totalPaid: 0,
+        outstanding: 0,
+      });
+    }
   }
 
   // ------------------------------------------
@@ -923,6 +970,33 @@ export async function getCustomerOutstandingSummary(customers) {
     customerBalances,
   };
 }
+
+// export async function getCustomerOutstandingBills(customerId) {
+//   const { data, error } = await supabase
+//     .from("bills")
+//     .select(
+//       `
+//       id,
+//       invoice_number,
+//       created_at,
+//       total,
+//       amount_paid
+//     `,
+//     )
+//     .eq("customer_id", customerId)
+//     .gt("total", 0)
+//     .order("created_at", { ascending: true })
+//     .not("customer_id", "is", null);
+
+//   if (error) throw new Error(error.message);
+
+//   return data
+//     .map((bill) => ({
+//       ...bill,
+//       outstanding: Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0),
+//     }))
+//     .filter((bill) => bill.outstanding > 0);
+// }
 
 ///////////// EXPENSE TABLE //////////////////
 
@@ -1015,7 +1089,7 @@ export async function getDashboardSummary(period) {
 
   const customerBillsQuery = supabase
     .from("bills")
-    .select("customer_id, total")
+    .select("customer_id, total, amount_paid")
     .not("customer_id", "is", null);
 
   const customerPaymentsQuery = supabase
@@ -1104,26 +1178,30 @@ export async function getDashboardSummary(period) {
   // CURRENT CUSTOMER OUTSTANDING
   // --------------------------------------------------
 
-  const customerSalesTotal = customerBills.reduce(
-    (sum, bill) => sum + Number(bill.total || 0),
+  // const customerSalesTotal = customerBills.reduce(
+  //   (sum, bill) => sum + Number(bill.total || 0),
+  //   0,
+  // );
+
+  // const customerPaymentsTotal = customerPayments.reduce(
+  //   (sum, payment) => sum + Number(payment.amount || 0),
+  //   0,
+  // );
+
+  const outstanding = customerBills.reduce(
+    (sum, bill) =>
+      sum + Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0),
     0,
   );
-
-  const customerPaymentsTotal = customerPayments.reduce(
-    (sum, payment) => sum + Number(payment.amount || 0),
-    0,
-  );
-
-  const outstanding = customerSalesTotal - customerPaymentsTotal;
 
   const customerBalances = new Map();
 
   for (const bill of customerBills) {
-    const customerId = bill.customer_id;
+    const outstanding = Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0);
 
-    const current = customerBalances.get(customerId) ?? 0;
+    const current = customerBalances.get(bill.customer_id) ?? 0;
 
-    customerBalances.set(customerId, current + Number(bill.total || 0));
+    customerBalances.set(bill.customer_id, current + outstanding);
   }
 
   for (const payment of customerPayments) {
@@ -1207,12 +1285,13 @@ export async function getDashboardSummary(period) {
 }
 
 export async function getCustomersOwing(limit = 5) {
-  const { data: bills, error: billsError } = await supabase
+  const { data: bills, error } = await supabase
     .from("bills")
     .select(
       `
       customer_id,
       total,
+      amount_paid,
       customers (
         id,
         fullName
@@ -1221,25 +1300,12 @@ export async function getCustomersOwing(limit = 5) {
     )
     .not("customer_id", "is", null);
 
-  if (billsError) {
-    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
-  }
-
-  const { data: payments, error: paymentsError } = await supabase.from(
-    "customer_payments",
-  ).select(`
-      customer_id,
-      amount
-    `);
-
-  if (paymentsError) {
-    throw new Error(
-      `Failed to fetch customer payments: ${paymentsError.message}`,
-    );
+  if (error) {
+    throw new Error(`Failed to fetch customer bills: ${error.message}`);
   }
 
   // ---------------------------------------------
-  // Calculate balance per customer
+  // Calculate outstanding balance per customer
   // ---------------------------------------------
 
   const customerMap = new Map();
@@ -1247,26 +1313,19 @@ export async function getCustomersOwing(limit = 5) {
   for (const bill of bills) {
     if (!bill.customer_id) continue;
 
+    const billOutstanding =
+      Number(bill.total ?? 0) - Number(bill.amount_paid ?? 0);
+
     const existing = customerMap.get(bill.customer_id);
 
     if (existing) {
-      existing.balance += Number(bill.total || 0);
+      existing.balance += billOutstanding;
     } else {
       customerMap.set(bill.customer_id, {
         id: bill.customer_id,
         name: bill.customers?.fullName ?? "Unknown Customer",
-        balance: Number(bill.total || 0),
+        balance: billOutstanding,
       });
-    }
-  }
-
-  for (const payment of payments) {
-    if (!payment.customer_id) continue;
-
-    const customer = customerMap.get(payment.customer_id);
-
-    if (customer) {
-      customer.balance -= Number(payment.amount || 0);
     }
   }
 
@@ -1286,17 +1345,19 @@ export async function getRecentBills(limit = 5) {
     .select(
       `
       *,
-      customers(
-      fullName
+      customers (
+        fullName
       )
     `,
     )
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(`Failed to fetch recent bills: ${error.message}`);
+  }
 
-  return data;
+  return data ?? [];
 }
 
 export async function getRecentPayments(limit = 5) {
@@ -1307,18 +1368,26 @@ export async function getRecentPayments(limit = 5) {
       id,
       amount,
       payment_method,
-      customers(
-      fullName
+      payment_date,
+      created_at,
+      bill_id,
+      reference,
+      customers (
+        fullName
+      ),
+      bills (
+        invoice_number
       )
     `,
     )
-    .is("bill_id", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(`Failed to fetch recent payments: ${error.message}`);
+  }
 
-  return data;
+  return data ?? [];
 }
 
 export async function getDashboardSales(period = "month") {

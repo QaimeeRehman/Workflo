@@ -11,6 +11,7 @@ function CostInformation({ onCostPerBoxChange, totalCost, costPerBox }) {
         <input
           type="number"
           min="0"
+          step="0.0000000001"
           value={costPerBox}
           onChange={(e) => onCostPerBoxChange(Number(e.target.value))}
           placeholder="e.g. 330"

@@ -3,13 +3,12 @@
 import {
   createNewCustomer,
   deleteCustomer,
-  getCustomerById,
-  getCustomerOutstandingSummary,
   updateCustomer,
 } from "@/app/_lib/dataService";
 import { supabase } from "@/app/_lib/supabase";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { getCustomerOutstandingBills } from "@/app/_lib/dataService";
 
 export async function createCustomerAction(formData) {
   if (
@@ -69,41 +68,55 @@ export async function deleteCustomerAction(id) {
 
 export async function receiveCustomerPaymentAction(formData) {
   const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
   const customerId = formData.get("customerId");
+  const billId = formData.get("billId");
   const amount = Number(formData.get("amount"));
   const paymentMethod = formData.get("payment_method");
   const paymentDate = formData.get("payment_date");
+  const reference = formData.get("reference");
   const notes = formData.get("notes");
 
-  if (!customerId || !amount || !paymentMethod || !paymentDate)
-    throw new Error("All fields are required only notes are optional");
+  if (!customerId || !billId || !amount || !paymentMethod || !paymentDate) {
+    throw new Error(
+      "Customer, bill, amount, payment method and payment date are required",
+    );
+  }
+
+  if (amount <= 0) {
+    throw new Error("Payment amount must be greater than zero");
+  }
 
   const { data, error } = await supabase.rpc("receive_customer_payment", {
-    p_customer_id: customerId,
+    p_customer_id: Number(customerId),
+    p_bill_id: Number(billId),
     p_amount: amount,
     p_payment_method: paymentMethod,
     p_payment_date: paymentDate,
-    p_reference: null,
-    p_notes: notes,
+    p_reference: reference || null,
+    p_notes: notes || null,
     p_created_by: Number(session.user.id),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(error.message);
+  }
 
   revalidatePath("/dashboard/customers");
-  revalidatePath(`/dashboard/customers${customerId}`);
+  revalidatePath(`/dashboard/customers/${customerId}`);
   revalidatePath("/dashboard/customers/payments/new");
 
   return data;
+}
 
-  // const customer = await getCustomerById(customerId);
+export async function getCustomerOutstandingBillsAction(customerId) {
+  if (!customerId) {
+    throw new Error("Customer ID is required");
+  }
 
-  // if (!customer) throw new Error("Customer not found");
-
-  // const { customerBalances } = await getCustomerOutstandingSummary([customer]);
-
-  // const balances = customerBalances.get(customer.id);
-
-  // if (amount > Number(balances.outstanding))
-  //   throw new Error("Amount must be less than current customer outstanding");
+  return await getCustomerOutstandingBills(Number(customerId));
 }

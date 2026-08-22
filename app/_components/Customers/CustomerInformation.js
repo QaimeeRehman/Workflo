@@ -5,7 +5,6 @@ import { format } from "date-fns";
 function CustomerInformation({ customer }) {
   const { id, created_at, fullName, saleType, taxCategory, cnic, phone, area } =
     customer;
-  console.log(customer);
   return (
     <div className="rounded-xl bg-white p-6  shadow-[0_0_6px_0_rgba(0,0,0,0.2)]">
       <h2 className="mb-6 text-xl font-semibold">Customer Information</h2>
