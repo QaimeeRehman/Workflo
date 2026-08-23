@@ -1,13 +1,5 @@
+import { ArrowRight, Banknote, Receipt, Users } from "lucide-react";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Banknote,
-  Boxes,
-  ClipboardList,
-  FileText,
-  Receipt,
-  Users,
-} from "lucide-react";
 
 const reports = [
   {
@@ -23,29 +15,29 @@ const reports = [
     icon: Banknote,
   },
   {
-    title: "Expenses",
-    description: "View and print recorded expense slips.",
-    href: "/dashboard/reports/expenses",
-    icon: FileText,
-  },
-  {
-    title: "Stock In",
-    description: "View stock-in records and supplier documents.",
-    href: "/dashboard/reports/stock-in",
-    icon: Boxes,
-  },
-  {
     title: "Customer Ledger",
     description: "View customer transactions and outstanding balances.",
     href: "/dashboard/reports/customer-ledger",
     icon: Users,
   },
-  {
-    title: "Inventory",
-    description: "View inventory and stock movement records.",
-    href: "/dashboard/reports/inventory",
-    icon: ClipboardList,
-  },
+  // {
+  //   title: "Expenses",
+  //   description: "View and print recorded expense slips.",
+  //   href: "/dashboard/reports/expenses",
+  //   icon: FileText,
+  // },
+  // {
+  //   title: "Stock In",
+  //   description: "View stock-in records and supplier documents.",
+  //   href: "/dashboard/reports/stock-in",
+  //   icon: Boxes,
+  // },
+  // {
+  //   title: "Inventory",
+  //   description: "View inventory and stock movement records.",
+  //   href: "/dashboard/reports/inventory",
+  //   icon: ClipboardList,
+  // },
 ];
 
 function page() {

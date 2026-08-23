@@ -1,10 +1,9 @@
-import Link from "next/link";
-import CustomerInformation from "./CustomerInformation";
-import CustomerAccountSummary from "./CustomerAccountSummary";
-import CustomerRecentActivity from "./CustomerRecentActivity";
 import { toCapitalize } from "@/app/_lib/helper";
+import Link from "next/link";
+import CustomerAccountSummary from "./CustomerAccountSummary";
+import CustomerInformation from "./CustomerInformation";
 
-function CustomerAccountOverview({ customer, ledger, ledgerSummary }) {
+function CustomerAccountOverview({ customer, summary }) {
   return (
     <div className="space-y-6 max-w-[80vw]">
       {/* Customer Information */}
@@ -23,14 +22,18 @@ function CustomerAccountOverview({ customer, ledger, ledgerSummary }) {
           Edit Customer
         </Link>
       </div>
-      {/* Keep your existing customer information component here */}
+      {/* Customer Information */}
       <CustomerInformation customer={customer} />
 
       {/* Account Summary */}
-      <CustomerAccountSummary ledgerSummary={ledgerSummary} />
+      <CustomerAccountSummary
+        totalSales={summary.totalSales}
+        totalPaid={summary.totalPaid}
+        outstanding={summary.outstanding}
+      />
 
-      {/* Recent Ledger */}
-      <CustomerRecentActivity ledger={ledger} customer={customer} />
+      {/* Recent Ledger
+      <CustomerLedger ledger={ledger} customer={customer} /> */}
     </div>
   );
 }

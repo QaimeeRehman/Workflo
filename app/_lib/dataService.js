@@ -710,10 +710,161 @@ export async function createCustomerPayment(payment) {
 
 ///////////// CUSTOMER LEDGER //////////////////
 
-export async function getCustomerLedger(customerId, period) {
+// export async function getCustomerLedger(customerId, period) {
+//   const { from, to } = getDatePeriodWise(period);
+
+//   let billsQuery = supabase
+//     .from("bills")
+//     .select(
+//       `
+//       id,
+//       invoice_number,
+//       total,
+//       created_at
+//     `,
+//     )
+//     .eq("customer_id", customerId)
+//     .order("created_at", { ascending: true });
+
+//   let paymentsQuery = supabase
+//     .from("customer_payments")
+//     .select(
+//       `
+//       id,
+//       bill_id,
+//       amount,
+//       payment_method,
+//       reference,
+//       created_at
+//     `,
+//     )
+//     .eq("customer_id", customerId)
+//     .order("created_at", { ascending: true });
+
+//   if (from) {
+//     billsQuery = billsQuery.gte("created_at", from.toISOString());
+//     paymentsQuery = paymentsQuery.gte("created_at", from.toISOString());
+//   }
+
+//   if (to) {
+//     billsQuery = billsQuery.lte("created_at", to.toISOString());
+//     paymentsQuery = paymentsQuery.lte("created_at", to.toISOString());
+//   }
+
+//   const [
+//     { data: bills, error: billsError },
+//     { data: payments, error: paymentsError },
+//   ] = await Promise.all([billsQuery, paymentsQuery]);
+
+//   if (billsError) {
+//     throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+//   }
+
+//   if (paymentsError) {
+//     throw new Error(
+//       `Failed to fetch customer payments: ${paymentsError.message}`,
+//     );
+//   }
+
+//   // --------------------------------------------------
+//   // CREATE BILL TRANSACTIONS
+//   // --------------------------------------------------
+
+//   const transactions = bills.map((bill) => ({
+//     id: `bill-${bill.id}`,
+//     date: bill.created_at,
+//     reference: bill.invoice_number,
+//     description: "Sale",
+
+//     debit: Number(bill.total ?? 0),
+//     credit: 0,
+
+//     type: "sale",
+//     bill_id: bill.id,
+//   }));
+
+//   // --------------------------------------------------
+//   // CREATE PAYMENT TRANSACTIONS
+//   // --------------------------------------------------
+
+//   for (const payment of payments) {
+//     transactions.push({
+//       id: `payment-${payment.id}`,
+//       date: payment.created_at,
+
+//       // Show the invoice if payment belongs to a bill
+//       reference: payment.bill_id
+//         ? bills.find((bill) => bill.id === payment.bill_id)?.invoice_number ||
+//           payment.reference ||
+//           "Payment"
+//         : payment.reference || "Payment",
+
+//       description: "Payment",
+
+//       debit: 0,
+//       credit: Number(payment.amount ?? 0),
+
+//       type: "payment",
+//       bill_id: payment.bill_id,
+//     });
+//   }
+
+//   // --------------------------------------------------
+//   // SORT
+//   // --------------------------------------------------
+
+//   transactions.sort(
+//     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+//   );
+
+//   // --------------------------------------------------
+//   // RUNNING BALANCE
+//   // --------------------------------------------------
+
+//   let balance = 0;
+
+//   const ledger = transactions.map((transaction) => {
+//     balance += transaction.debit - transaction.credit;
+
+//     return {
+//       ...transaction,
+//       balance,
+//     };
+//   });
+
+//   // --------------------------------------------------
+//   // SUMMARY
+//   // --------------------------------------------------
+
+//   const totalSales = bills.reduce(
+//     (sum, bill) => sum + Number(bill.total ?? 0),
+//     0,
+//   );
+
+//   const totalPaid = payments.reduce(
+//     (sum, payment) => sum + Number(payment.amount ?? 0),
+//     0,
+//   );
+
+//   return {
+//     ledger,
+
+//     summary: {
+//       totalSales,
+//       totalPaid,
+//       outstanding: totalSales - totalPaid,
+//     },
+//   };
+// }
+
+export async function getCustomerLedger(customerId, period = "all") {
   const { from, to } = getDatePeriodWise(period);
 
-  let billsQuery = supabase
+  // --------------------------------------------------
+  // FETCH CUSTOMER BILLS
+  // --------------------------------------------------
+
+  const { data: bills, error: billsError } = await supabase
     .from("bills")
     .select(
       `
@@ -726,7 +877,15 @@ export async function getCustomerLedger(customerId, period) {
     .eq("customer_id", customerId)
     .order("created_at", { ascending: true });
 
-  let paymentsQuery = supabase
+  if (billsError) {
+    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
+  }
+
+  // --------------------------------------------------
+  // FETCH CUSTOMER PAYMENTS
+  // --------------------------------------------------
+
+  const { data: payments, error: paymentsError } = await supabase
     .from("customer_payments")
     .select(
       `
@@ -741,38 +900,74 @@ export async function getCustomerLedger(customerId, period) {
     .eq("customer_id", customerId)
     .order("created_at", { ascending: true });
 
-  if (from) {
-    billsQuery = billsQuery.gte("created_at", from.toISOString());
-    paymentsQuery = paymentsQuery.gte("created_at", from.toISOString());
-  }
-
-  if (to) {
-    billsQuery = billsQuery.lte("created_at", to.toISOString());
-    paymentsQuery = paymentsQuery.lte("created_at", to.toISOString());
-  }
-
-  const [
-    { data: bills, error: billsError },
-    { data: payments, error: paymentsError },
-  ] = await Promise.all([billsQuery, paymentsQuery]);
-
-  if (billsError) {
-    throw new Error(`Failed to fetch customer bills: ${billsError.message}`);
-  }
-
   if (paymentsError) {
     throw new Error(
       `Failed to fetch customer payments: ${paymentsError.message}`,
     );
   }
 
+  const allBills = bills ?? [];
+  const allPayments = payments ?? [];
+
+  // --------------------------------------------------
+  // DATE RANGE
+  // --------------------------------------------------
+
+  const fromTime = from?.getTime() ?? null;
+  const toTime = to?.getTime() ?? null;
+
+  const isBeforePeriod = (date) => {
+    if (fromTime === null) return false;
+
+    return new Date(date).getTime() < fromTime;
+  };
+
+  const isInPeriod = (date) => {
+    const time = new Date(date).getTime();
+
+    if (fromTime !== null && time < fromTime) {
+      return false;
+    }
+
+    if (toTime !== null && time > toTime) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // --------------------------------------------------
+  // OPENING BALANCE
+  // --------------------------------------------------
+
+  const openingSales = allBills
+    .filter((bill) => isBeforePeriod(bill.created_at))
+    .reduce((sum, bill) => sum + Number(bill.total ?? 0), 0);
+
+  const openingPayments = allPayments
+    .filter((payment) => isBeforePeriod(payment.created_at))
+    .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+
+  const openingBalance = Number((openingSales - openingPayments).toFixed(2));
+
+  // --------------------------------------------------
+  // PERIOD TRANSACTIONS
+  // --------------------------------------------------
+
+  const periodBills = allBills.filter((bill) => isInPeriod(bill.created_at));
+
+  const periodPayments = allPayments.filter((payment) =>
+    isInPeriod(payment.created_at),
+  );
+
   // --------------------------------------------------
   // CREATE BILL TRANSACTIONS
   // --------------------------------------------------
 
-  const transactions = bills.map((bill) => ({
+  const transactions = periodBills.map((bill) => ({
     id: `bill-${bill.id}`,
     date: bill.created_at,
+
     reference: bill.invoice_number,
     description: "Sale",
 
@@ -787,17 +982,16 @@ export async function getCustomerLedger(customerId, period) {
   // CREATE PAYMENT TRANSACTIONS
   // --------------------------------------------------
 
-  for (const payment of payments) {
+  for (const payment of periodPayments) {
+    const bill = payment.bill_id
+      ? allBills.find((bill) => Number(bill.id) === Number(payment.bill_id))
+      : null;
+
     transactions.push({
       id: `payment-${payment.id}`,
       date: payment.created_at,
 
-      // Show the invoice if payment belongs to a bill
-      reference: payment.bill_id
-        ? bills.find((bill) => bill.id === payment.bill_id)?.invoice_number ||
-          payment.reference ||
-          "Payment"
-        : payment.reference || "Payment",
+      reference: bill?.invoice_number || payment.reference || "Payment",
 
       description: "Payment",
 
@@ -821,10 +1015,16 @@ export async function getCustomerLedger(customerId, period) {
   // RUNNING BALANCE
   // --------------------------------------------------
 
-  let balance = 0;
+  let balance = openingBalance;
 
   const ledger = transactions.map((transaction) => {
-    balance += transaction.debit - transaction.credit;
+    balance = Number(
+      (
+        balance +
+        Number(transaction.debit || 0) -
+        Number(transaction.credit || 0)
+      ).toFixed(2),
+    );
 
     return {
       ...transaction,
@@ -836,24 +1036,70 @@ export async function getCustomerLedger(customerId, period) {
   // SUMMARY
   // --------------------------------------------------
 
-  const totalSales = bills.reduce(
+  const totalSales = periodBills.reduce(
     (sum, bill) => sum + Number(bill.total ?? 0),
     0,
   );
 
-  const totalPaid = payments.reduce(
+  const totalPaid = periodPayments.reduce(
     (sum, payment) => sum + Number(payment.amount ?? 0),
     0,
+  );
+
+  const closingBalance = Number(
+    (openingBalance + totalSales - totalPaid).toFixed(2),
   );
 
   return {
     ledger,
 
     summary: {
-      totalSales,
-      totalPaid,
-      outstanding: totalSales - totalPaid,
+      openingBalance,
+      totalSales: Number(totalSales.toFixed(2)),
+      totalPaid: Number(totalPaid.toFixed(2)),
+      closingBalance,
     },
+  };
+}
+
+export async function getCustomerAccountSummary(customerId) {
+  const [billsResult, paymentsResult] = await Promise.all([
+    supabase.from("bills").select("total").eq("customer_id", customerId),
+
+    supabase
+      .from("customer_payments")
+      .select("amount")
+      .eq("customer_id", customerId),
+  ]);
+
+  if (billsResult.error) {
+    throw new Error(
+      `Failed to fetch customer bills: ${billsResult.error.message}`,
+    );
+  }
+
+  if (paymentsResult.error) {
+    throw new Error(
+      `Failed to fetch customer payments: ${paymentsResult.error.message}`,
+    );
+  }
+
+  const totalSales = (billsResult.data ?? []).reduce(
+    (sum, bill) => sum + Number(bill.total ?? 0),
+    0,
+  );
+
+  const totalPaid = (paymentsResult.data ?? []).reduce(
+    (sum, payment) => sum + Number(payment.amount ?? 0),
+    0,
+  );
+
+  const outstanding = Number((totalSales - totalPaid).toFixed(2));
+
+  return {
+    totalSales: Number(totalSales.toFixed(2)),
+    totalPaid: Number(totalPaid.toFixed(2)),
+    outstanding,
   };
 }
 
@@ -1477,4 +1723,348 @@ export async function getBillsReport({
 
     return invoice.includes(searchTerm) || customer.includes(searchTerm);
   });
+}
+
+export async function getPaymentsReport({
+  search = "",
+  from = "",
+  to = "",
+} = {}) {
+  // --------------------------------------------------
+  // CASH TRANSACTIONS
+  // --------------------------------------------------
+
+  let query = supabase
+    .from("cash_transactions")
+    .select(
+      `
+      id,
+      created_at,
+      transaction_type,
+      direction,
+      amount,
+      reference_type,
+      reference_id,
+      description,
+      created_by
+    `,
+    )
+    .eq("direction", "in")
+    .order("created_at", { ascending: false });
+
+  if (from) {
+    query = query.gte("created_at", `${from}T00:00:00`);
+  }
+
+  if (to) {
+    query = query.lt("created_at", `${to}T23:59:59.999`);
+  }
+
+  const { data: transactions, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to fetch payment transactions: ${error.message}`);
+  }
+
+  if (!transactions?.length) {
+    return [];
+  }
+
+  // --------------------------------------------------
+  // GET ALL POSSIBLE REFERENCE IDS
+  // --------------------------------------------------
+
+  const referenceIds = [
+    ...new Set(
+      transactions
+        .filter((transaction) => transaction.reference_id != null)
+        .map((transaction) => Number(transaction.reference_id)),
+    ),
+  ];
+
+  // --------------------------------------------------
+  // FETCH CUSTOMER PAYMENTS
+  //
+  // Some existing transactions have:
+  //
+  // reference_id = customer_payments.id
+  //
+  // --------------------------------------------------
+
+  let customerPayments = [];
+
+  if (referenceIds.length > 0) {
+    const { data, error } = await supabase
+      .from("customer_payments")
+      .select(
+        `
+        id,
+        customer_id,
+        bill_id,
+        amount,
+        payment_method,
+        reference
+      `,
+      )
+      .in("id", referenceIds);
+
+    if (error) {
+      throw new Error(`Failed to fetch customer payments: ${error.message}`);
+    }
+
+    customerPayments = data ?? [];
+  }
+
+  // --------------------------------------------------
+  // FETCH BILLS
+  //
+  // Needed for:
+  //
+  // 1. Cash sales
+  // 2. Customer payments whose reference_id is bill.id
+  // 3. Resolving customer/invoice
+  // --------------------------------------------------
+
+  const possibleBillIds = [
+    ...new Set([
+      ...referenceIds,
+
+      ...customerPayments
+        .map((payment) => payment.bill_id)
+        .filter(Boolean)
+        .map(Number),
+    ]),
+  ];
+
+  let bills = [];
+
+  if (possibleBillIds.length > 0) {
+    const { data, error } = await supabase
+      .from("bills")
+      .select(
+        `
+        id,
+        invoice_number,
+        customer_id,
+        customers (
+          id,
+          fullName
+        )
+      `,
+      )
+      .in("id", possibleBillIds);
+
+    if (error) {
+      throw new Error(`Failed to fetch payment bills: ${error.message}`);
+    }
+
+    bills = data ?? [];
+  }
+
+  // --------------------------------------------------
+  // MAPS
+  // --------------------------------------------------
+
+  const customerPaymentMap = new Map(
+    customerPayments.map((payment) => [Number(payment.id), payment]),
+  );
+
+  const billMap = new Map(bills.map((bill) => [Number(bill.id), bill]));
+
+  // --------------------------------------------------
+  // BUILD REPORT
+  // --------------------------------------------------
+
+  let result = transactions.map((transaction) => {
+    const referenceId =
+      transaction.reference_id != null
+        ? Number(transaction.reference_id)
+        : null;
+
+    let bill = null;
+    let customerPayment = null;
+
+    // ==================================================
+    // CUSTOMER PAYMENT
+    // ==================================================
+
+    if (transaction.transaction_type === "customer_payment") {
+      // -----------------------------------------------
+      // First: assume reference_id = customer_payment.id
+      // -----------------------------------------------
+
+      customerPayment =
+        referenceId != null ? customerPaymentMap.get(referenceId) : null;
+
+      if (customerPayment) {
+        // Correct relationship:
+        //
+        // customer_payment
+        //      ↓
+        // bill_id
+        //      ↓
+        // bill
+        bill = customerPayment.bill_id
+          ? billMap.get(Number(customerPayment.bill_id))
+          : null;
+      } else {
+        // ---------------------------------------------
+        // Legacy/current records where:
+        //
+        // reference_id = bill.id
+        // ---------------------------------------------
+
+        bill = referenceId != null ? billMap.get(referenceId) : null;
+
+        if (bill) {
+          // Find the corresponding customer payment
+          // using bill_id.
+          customerPayment =
+            customerPayments.find(
+              (payment) => Number(payment.bill_id) === Number(bill.id),
+            ) ?? null;
+        }
+      }
+    }
+
+    // ==================================================
+    // CASH SALE
+    // ==================================================
+
+    if (transaction.transaction_type === "sale") {
+      bill = referenceId != null ? billMap.get(referenceId) : null;
+    }
+
+    // --------------------------------------------------
+    // CUSTOMER
+    // --------------------------------------------------
+
+    const customer = bill?.customers ?? null;
+
+    return {
+      id: transaction.id,
+
+      created_at: transaction.created_at,
+
+      transaction_type: transaction.transaction_type,
+
+      amount: Number(transaction.amount ?? 0),
+
+      reference_type: transaction.reference_type,
+
+      reference_id: transaction.reference_id,
+
+      description: transaction.description,
+
+      customer: customer
+        ? {
+            id: customer.id,
+            fullName: customer.fullName,
+          }
+        : null,
+
+      bill: bill
+        ? {
+            id: bill.id,
+            invoice_number: bill.invoice_number,
+          }
+        : null,
+
+      customer_payment: customerPayment
+        ? {
+            id: customerPayment.id,
+            payment_method: customerPayment.payment_method,
+            amount: Number(customerPayment.amount ?? 0),
+          }
+        : null,
+    };
+  });
+
+  // --------------------------------------------------
+  // SEARCH
+  // --------------------------------------------------
+
+  const term = search?.trim().replaceAll(" ", "").toLowerCase();
+
+  if (term) {
+    result = result.filter((payment) => {
+      const customerName =
+        payment.customer?.fullName?.replaceAll(" ", "").toLowerCase() ?? "";
+
+      const invoiceNumber = payment.bill?.invoice_number?.toLowerCase() ?? "";
+
+      const description = payment.description?.toLowerCase() ?? "";
+
+      return (
+        customerName.includes(term) ||
+        invoiceNumber.includes(term) ||
+        description.includes(term)
+      );
+    });
+  }
+
+  return result;
+}
+
+export async function getPaymentsReportSummary({
+  search = "",
+  from = "",
+  to = "",
+} = {}) {
+  const payments = await getPaymentsReport({
+    search,
+    from,
+    to,
+  });
+
+  const totalReceived = payments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0,
+  );
+
+  // ---------------------------------------------
+  // CASH
+  //
+  // Cash sales are always cash.
+  // Customer payments depend on payment_method.
+  // ---------------------------------------------
+
+  const cash = payments.reduce((sum, payment) => {
+    // Cash sale
+    if (payment.transaction_type === "sale") {
+      return sum + Number(payment.amount || 0);
+    }
+
+    // Customer payment made in cash
+    if (
+      payment.transaction_type === "customer_payment" &&
+      payment.customer_payment?.payment_method === "cash"
+    ) {
+      return sum + Number(payment.amount || 0);
+    }
+
+    return sum;
+  }, 0);
+
+  // ---------------------------------------------
+  // BANK / ONLINE
+  // ---------------------------------------------
+
+  const bank = payments.reduce((sum, payment) => {
+    if (
+      payment.transaction_type === "customer_payment" &&
+      payment.customer_payment?.payment_method !== "cash"
+    ) {
+      return sum + Number(payment.amount || 0);
+    }
+
+    return sum;
+  }, 0);
+
+  return {
+    totalReceived,
+    cash,
+    bank,
+    count: payments.length,
+  };
 }

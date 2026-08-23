@@ -12,7 +12,7 @@ async function page() {
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
             <Link
-              href="/products"
+              href="/dashboard/products"
               className="flex items-center gap-1 hover:text-slate-800"
             >
               <ArrowLeft size={16} />

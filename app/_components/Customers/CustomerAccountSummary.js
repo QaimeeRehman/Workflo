@@ -1,26 +1,33 @@
 import SummaryCard from "../SummaryCard";
 
-function CustomerAccountSummary({ ledgerSummary }) {
-  const { totalSales, totalPaid, outstanding } = ledgerSummary || {};
-  console.log(ledgerSummary);
+function CustomerAccountSummary({ totalSales, totalPaid, outstanding }) {
   return (
     <div className="grid grid-cols-3 gap-4">
       <SummaryCard
         label="Total Sales"
-        value={`Rs. ${totalSales.toLocaleString()}`}
+        value={`Rs. ${Number(totalSales || 0).toLocaleString("en-PK", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`}
         description="Total billed amount"
       />
 
       <SummaryCard
         label="Total Paid"
-        value={`Rs. ${totalPaid.toLocaleString()}`}
+        value={`Rs. ${Number(totalPaid || 0).toLocaleString("en-PK", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`}
         description="Total payments received"
       />
 
       <SummaryCard
         label="Outstanding"
-        value={`Rs. ${outstanding.toLocaleString()}`}
-        description="Current customer balance"
+        value={`Rs. ${Number(outstanding || 0).toLocaleString("en-PK", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`}
+        description="Current amount due"
       />
     </div>
   );

@@ -39,7 +39,7 @@ function InventoryTableItem({ inventory, inventoryMovement }) {
           Number(costPerBox) * Number(inventoryItem.quantity_boxes);
         return (
           <Link
-            href={`/inventory/${inventoryItem.product_id}/${inventoryItem.category}`}
+            href={`/dashboard/inventory/${inventoryItem.product_id}/${inventoryItem.category}`}
             key={inventoryItem.id}
           >
             <InventoryRow

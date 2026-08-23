@@ -118,7 +118,7 @@ async function page({ params }) {
         </div>
 
         <Link
-          href="/inventory"
+          href="/dashboard/inventory"
           className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
           ← Back to Inventory

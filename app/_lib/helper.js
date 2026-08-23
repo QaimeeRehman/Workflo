@@ -135,3 +135,25 @@ export function buildYearlySales(bills, now) {
 
   return salesByMonth;
 }
+
+export function formatMoney(value) {
+  return `Rs. ${Number(value || 0).toLocaleString("en-PK")}`;
+}
+
+export function formatDate(value) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleDateString("en-PK", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function formatPaymentMethod(method) {
+  if (!method) return "-";
+
+  return method
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}

@@ -80,7 +80,7 @@ function BillsReportTable({ bills }) {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[850px] text-sm">
+        <table className="w-full min-w-212.5 text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wide text-slate-400">
               <th className="px-6 py-3 font-medium">Invoice</th>
@@ -104,20 +104,13 @@ function BillsReportTable({ bills }) {
               <tr
                 key={bill.id}
                 onClick={(e) => handleClick(e, bill.invoice_number)}
-                className="group transition-colors hover:bg-slate-50"
+                className="group transition-colors cursor-pointer hover:bg-slate-100"
               >
                 {/* Invoice */}
-                <td className="px-6 py-4">
-                  <Link
-                    href={`/bills/${bill.id}`}
-                    className="font-medium text-primary-600 hover:text-primary-700"
-                  >
-                    {bill.invoice_number}
-                  </Link>
-                </td>
+                <td className="px-6 py-4 font-medium">{bill.invoice_number}</td>
 
                 {/* Customer */}
-                <td className="px-4 py-4 text-slate-600">
+                <td className="px-4 py-4 text-slate-600 font-medium">
                   {bill.customers?.fullName ?? "Walk-in Customer"}
                 </td>
 
@@ -137,7 +130,7 @@ function BillsReportTable({ bills }) {
                 </td>
 
                 {/* Paid */}
-                <td className="px-4 py-4 text-right text-slate-600">
+                <td className="px-4 py-4 text-right font-medium text-slate-600">
                   {formatCurrency(bill.amount_paid)}
                 </td>
 

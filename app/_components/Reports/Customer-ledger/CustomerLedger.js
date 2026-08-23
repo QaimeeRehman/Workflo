@@ -1,8 +1,9 @@
 "use client";
-import CustomerLedgerFilter from "./CustomerLedgerFilter";
+import CustomerLedgerFilter from "../../Customers/CustomerLedgerFilter";
+import PeriodFilter from "../../PeriodFilter";
 import CustomerLedgerRow from "./CustomerLedgerRow";
 
-function CustomerRecentActivity({ customer, ledger }) {
+function CustomerLedger({ customer, ledger }) {
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow">
       <div className="border-b border-slate-200 px-5 py-4">
@@ -15,7 +16,7 @@ function CustomerRecentActivity({ customer, ledger }) {
             </p>
           </div>
 
-          <CustomerLedgerFilter />
+          <PeriodFilter defaultValue="all" />
         </div>
       </div>
 
@@ -69,4 +70,4 @@ function CustomerRecentActivity({ customer, ledger }) {
   );
 }
 
-export default CustomerRecentActivity;
+export default CustomerLedger;
