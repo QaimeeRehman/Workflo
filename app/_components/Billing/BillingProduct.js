@@ -22,7 +22,6 @@ function BillingProduct({ products, inventory, packagings }) {
       selectedProduct?.id === packaging.product_id &&
       category === packaging.category,
   );
-  console.log(selectedPackaging);
   const inventoryMap = new Map();
 
   inventory.forEach((item) => {
@@ -48,7 +47,7 @@ function BillingProduct({ products, inventory, packagings }) {
 
     const taxCategory =
       saleType === "cash_sale" ? "non_filer" : customer.taxCategory;
-
+    console.log(saleTypeValue, taxCategory);
     const pricingRow = selectedProduct.product_pricing?.find(
       (pricing) =>
         pricing.category === category &&

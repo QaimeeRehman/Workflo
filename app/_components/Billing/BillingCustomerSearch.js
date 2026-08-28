@@ -120,7 +120,6 @@ import { Search, User, Banknote } from "lucide-react";
 import { useState } from "react";
 
 function BillingCustomerSearch({ customers, customerBalances }) {
-  console.log(customers);
   const [customerSearch, setCustomerSearch] = useState("");
 
   const customer = useBillingStore((state) => state.customer);

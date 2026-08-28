@@ -790,6 +790,7 @@ export async function createBill(billData) {
     bill: {
       id: data.bill_id,
       invoice_number: data.invoice_number,
+      token: data.public_token,
       customer_id: customer_id ?? null,
       subtotal,
       discount: cleanDiscount,

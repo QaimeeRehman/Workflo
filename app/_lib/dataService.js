@@ -36,6 +36,18 @@ export async function getCustomerById(id) {
   return customer;
 }
 
+export async function getCustomerByToken(token) {
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("public_token", token)
+    .single();
+
+  if (customerError) throw new Error("Customer not found with that token");
+
+  return customer;
+}
+
 export async function getAllCustomers() {
   const { data: customers, error } = await supabase
     .from("customers")
@@ -629,25 +641,57 @@ export async function getCustomerOutstandingBills(customerId) {
     .filter((bill) => bill.outstanding > 0);
 }
 
-export async function getBillByInvoiceNumber(invoiceNumber) {
+// export async function getBillByInvoiceNumber(invoiceNumber) {
+//   const { data, error } = await supabase
+//     .from("bills")
+//     .select(
+//       `
+//      *,
+//       customer:customers (
+//         id,
+//         fullName,
+//         phone,
+//         cnic
+//       )
+//     `,
+//     )
+//     .eq("invoice_number", invoiceNumber)
+//     .single();
+
+//   if (error) {
+//     throw new Error(`Failed to fetch bill: ${error.message}`);
+//   }
+
+//   return data;
+// }
+export async function getBillByToken(token) {
+  // Invalid/missing token → invoice not found
+  if (!token) {
+    return null;
+  }
+
+  // UUID validation
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!uuidRegex.test(token)) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from("bills")
     .select(
       `
-     *,
-      customer:customers (
-        id,
-        fullName,
-        phone,
-        cnic
-      )
+      *,
+      customer:customers(*)
     `,
     )
-    .eq("invoice_number", invoiceNumber)
-    .single();
+    .eq("public_token", token)
+    .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to fetch bill: ${error.message}`);
+    console.error("Failed to fetch bill:", error);
+    return null;
   }
 
   return data;
@@ -1689,6 +1733,7 @@ export async function getBillsReport({
       sale_type,
       payment_type,
       amount_paid,
+      public_token,
       customers(
         fullName
       )
@@ -2067,4 +2112,296 @@ export async function getPaymentsReportSummary({
     bank,
     count: payments.length,
   };
+}
+
+export async function getProductsForCustomerOrder(customerId) {
+  const { data: customer, error: customerError } = await supabase
+    .from("customers")
+    .select(
+      `
+      id,
+      "fullName",
+      area,
+      "saleType",
+      "taxCategory"
+    `,
+    )
+    .eq("id", customerId)
+    .single();
+
+  if (customerError || !customer) {
+    throw new Error("Customer not found");
+  }
+
+  const { data: pricing, error: pricingError } = await supabase
+    .from("product_pricing")
+    .select(
+      `
+      product_id,
+      category,
+      price
+    `,
+    )
+    .eq("sale_type", customer.saleType)
+    .eq("tax_category", customer.taxCategory);
+
+  if (pricingError) {
+    throw new Error(
+      `Failed to fetch customer pricing: ${pricingError.message}`,
+    );
+  }
+
+  if (!pricing?.length) {
+    return {
+      customer: {
+        id: customer.id,
+        fullName: customer.fullName,
+        area: customer.area,
+      },
+      products: [],
+    };
+  }
+
+  const productIds = [...new Set(pricing.map((item) => item.product_id))];
+
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select(
+      `
+      id,
+      name,
+      type
+    `,
+    )
+    .in("id", productIds);
+
+  if (productsError) {
+    throw new Error(`Failed to fetch products: ${productsError.message}`);
+  }
+
+  const { data: packaging, error: packagingError } = await supabase
+    .from("product_packaging")
+    .select(
+      `
+      product_id,
+      category,
+      units_per_box,
+      boxes_per_carton
+    `,
+    )
+    .in("product_id", productIds);
+
+  if (packagingError) {
+    throw new Error(
+      `Failed to fetch product packaging: ${packagingError.message}`,
+    );
+  }
+
+  const productMap = new Map(
+    (products ?? []).map((product) => [Number(product.id), product]),
+  );
+
+  const packagingMap = new Map(
+    (packaging ?? []).map((item) => [
+      `${item.product_id}-${item.category}`,
+      item,
+    ]),
+  );
+
+  const resolvedProducts = pricing
+    .map((pricingRow) => {
+      const product = productMap.get(Number(pricingRow.product_id));
+
+      if (!product) return null;
+
+      const packagingData = packagingMap.get(
+        `${pricingRow.product_id}-${pricingRow.category}`,
+      );
+
+      return {
+        id: product.id,
+        name: product.name,
+        type: product.type,
+
+        category: pricingRow.category,
+
+        price: Number(pricingRow.price ?? 0),
+
+        packaging: packagingData
+          ? {
+              unitsPerBox: Number(packagingData.units_per_box ?? 0),
+              boxesPerCarton: Number(packagingData.boxes_per_carton ?? 0),
+            }
+          : null,
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    customer: {
+      id: customer.id,
+      fullName: customer.fullName,
+      area: customer.area,
+    },
+
+    products: resolvedProducts,
+  };
+}
+
+// PRE_ORDERS SERVICES
+
+export async function createPreOrder({ customerId, items, notes }) {
+  try {
+    const { data: orderId, error } = await supabase.rpc("create_pre_order", {
+      p_customer_id: customerId,
+      p_items: items,
+      p_notes: notes,
+    });
+
+    console.log("create_pre_order RPC data:", orderId);
+    console.log("create_pre_order RPC error:", error);
+
+    if (error) {
+      console.error("submitOrder:", error);
+
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    if (!orderId) {
+      return {
+        success: false,
+        error: "Order was created but no order ID was returned.",
+      };
+    }
+
+    // Get the generated order number
+    const { data: order, error: orderError } = await supabase
+      .from("pre_orders")
+      .select("id, order_number")
+      .eq("id", orderId)
+      .single();
+
+    console.log("Order:", order);
+    console.log("Order lookup error:", orderError);
+
+    if (orderError) {
+      console.error("submitOrder order lookup:", orderError);
+
+      return {
+        success: false,
+        error: "Order was created but could not retrieve order number.",
+      };
+    }
+
+    return {
+      success: true,
+      orderId: order.id,
+      orderNumber: order.order_number,
+    };
+  } catch (error) {
+    console.error("submitOrder:", error);
+
+    return {
+      success: false,
+      error: "Failed to submit order.",
+    };
+  }
+}
+
+export async function getPreOrders() {
+  try {
+    const { data, error } = await supabase
+      .from("pre_orders")
+      .select(
+        ` id, order_number, customer_id, status, total_amount, total_boxes, notes, created_at, updated_at, customers ( id, fullName, area ), pre_order_items ( id ) `,
+      )
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("getPreOrders:", error);
+      return [];
+    }
+    return data ?? [];
+  } catch (error) {
+    console.error("getPreOrders:", error);
+    return [];
+  }
+}
+
+export async function getOrderById(orderId) {
+  try {
+    const { data, error } = await supabase
+      .from("pre_orders")
+      .select(
+        `
+        id,
+        order_number,
+        customer_id,
+        status,
+        total_amount,
+        total_boxes,
+        notes,
+        created_at,
+        updated_at,
+
+        customers (
+          id,
+          fullName,
+          area,
+          phone
+        ),
+
+        pre_order_items (
+          id,
+          product_id,
+          category,
+          boxes,
+          cartons,
+          total_boxes,
+          line_total,
+          boxes_per_carton,
+          price_per_box,
+          carton_price,
+
+          products (
+            id,
+            name
+          )
+        )
+      `,
+      )
+      .eq("id", orderId)
+      .single();
+
+    console.log("getOrderById data:", data);
+    console.log("getOrderById error:", error);
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: "Order not found.",
+      };
+    }
+
+    return {
+      success: true,
+      order: data,
+    };
+  } catch (error) {
+    console.error("getOrderById:", error);
+
+    return {
+      success: false,
+      error: "Failed to retrieve order.",
+    };
+  }
 }

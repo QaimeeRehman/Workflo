@@ -1,5 +1,6 @@
 // app/_components/Billing/InvoiceA5Wrapper.jsx
 "use client";
+
 import { useFitToA5 } from "@/app/_hooks/useFitToA5";
 
 export default function InvoiceA5Wrapper({ children, watch }) {
@@ -9,7 +10,7 @@ export default function InvoiceA5Wrapper({ children, watch }) {
     <div
       id="invoice"
       ref={pageRef}
-      className="mx-auto bg-white shadow-sm print:shadow-none relative overflow-hidden"
+      className="mx-auto bg-white shadow-sm print relative overflow-hidden"
       style={{ width: "148mm", height: "210mm" }}
     >
       <div

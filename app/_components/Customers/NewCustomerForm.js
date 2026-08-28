@@ -51,7 +51,7 @@ function NewCustomerForm({ customer }) {
           Personal Information
         </h2>
 
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           <input type="hidden" value={customer?.id} name="id" />
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -77,6 +77,21 @@ function NewCustomerForm({ customer }) {
               required
               defaultValue={customer?.phone ?? ""}
               name="phone"
+              type="text"
+              placeholder="03XXXXXXXXX"
+              className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Whatsapp Number
+            </label>
+
+            <input
+              required
+              defaultValue={customer?.phone ?? ""}
+              name="whatsapp_phone"
               type="text"
               placeholder="03XXXXXXXXX"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
@@ -149,7 +164,7 @@ function NewCustomerForm({ customer }) {
               defaultValue={customer?.taxCategory ?? ""}
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-blue-600"
             >
-              <option value="non-filer">Non-Filer</option>
+              <option value="non_filer">Non-Filer</option>
               <option value="filer">Filer</option>
             </select>
           </div>

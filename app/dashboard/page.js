@@ -25,8 +25,8 @@ async function page({ searchParams }) {
   ] = await Promise.all([
     getDashboardSummary(period),
     getCustomersOwing(5),
-    getRecentBills(5),
-    getRecentPayments(5),
+    getRecentBills(10),
+    getRecentPayments(10),
     getDashboardSales("month"),
     getDashboardSales("year"),
   ]);

@@ -9,7 +9,7 @@ function PricingTableRow({ product }) {
       {/* Product */}
       <td className="px-6 py-5">
         <p className="font-semibold text-slate-800">
-          {toCapitalize(product.name.split(" "))}
+          {toCapitalize(product.name)}
         </p>
       </td>
 

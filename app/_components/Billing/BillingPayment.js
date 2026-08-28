@@ -18,11 +18,10 @@ function BillingPayment({ total }) {
   const setDiscount = useBillingStore((state) => state.setDiscount);
   const setItems = useBillingStore((state) => state.setItems);
   const discount = useBillingStore((state) => state.discount);
-
+  const setSaleType = useBillingStore((state) => state.setSaleType);
   const received = amountReceived === "" ? 0 : Number(amountReceived) || 0;
   const remaining = Math.max(0, total - received);
   const change = paymentType === "cash" ? Math.max(0, received - total) : 0;
-
   function handlePaymentTypeChange(type) {
     setPaymentType(type);
 
@@ -72,7 +71,8 @@ function BillingPayment({ total }) {
       setDiscount(0);
       setPaymentType("cash");
       setAmountReceived(0);
-      router.push(`/dashboard/billing/${result.bill.invoice_number}`);
+      setSaleType("customer");
+      router.push(`/dashboard/billing/${result.bill.token}`);
     } catch (error) {
       toast.error(error.message);
     }

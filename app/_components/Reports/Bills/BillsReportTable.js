@@ -59,10 +59,10 @@ function BillsReportTable({ bills }) {
     );
   }
 
-  function handleClick(e, invoiceNumber) {
+  function handleClick(e, public_token) {
     e.stopPropagation();
 
-    router.push(`/dashboard/billing/${invoiceNumber}`);
+    router.push(`/dashboard/billing/${public_token}`);
   }
 
   return (
@@ -103,7 +103,7 @@ function BillsReportTable({ bills }) {
             {bills.map((bill) => (
               <tr
                 key={bill.id}
-                onClick={(e) => handleClick(e, bill.invoice_number)}
+                onClick={(e) => handleClick(e, bill.public_token)}
                 className="group transition-colors cursor-pointer hover:bg-slate-100"
               >
                 {/* Invoice */}

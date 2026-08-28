@@ -14,7 +14,8 @@ export async function createCustomerAction(formData) {
   if (
     formData.get("fullName") === "" ||
     formData.get("phone") === "" ||
-    formData.get("cnic") === ""
+    formData.get("cnic") === "" ||
+    formData.get("whatsapp_phone") === ""
   )
     return null;
 
@@ -25,6 +26,7 @@ export async function createCustomerAction(formData) {
     taxCategory: formData.get("taxCategory"),
     cnic: formData.get("cnic"),
     area: formData.get("area"),
+    whatsapp_phone: formData.get("whatsapp_phone"),
   };
 
   const { data, error } = await createNewCustomer(newCustomer);
@@ -38,20 +40,25 @@ export async function updateCustomerAction(formData) {
   if (
     formData.get("fullName") === "" ||
     formData.get("phone") === "" ||
-    formData.get("cnic") === ""
+    formData.get("cnic") === "" ||
+    formData.get("whatsapp_phone") === ""
   )
     return null;
 
-  const newCustomer = {
+  const updatedCustomer = {
     fullName: formData.get("fullName"),
     phone: formData.get("phone"),
     saleType: formData.get("saleType"),
     taxCategory: formData.get("taxCategory"),
     cnic: formData.get("cnic"),
     area: formData.get("area"),
+    whatsapp_phone: formData.get("whatsapp_phone"),
   };
 
-  const { data, error } = await updateCustomer(formData.get("id"), newCustomer);
+  const { data, error } = await updateCustomer(
+    formData.get("id"),
+    updatedCustomer,
+  );
 
   revalidatePath("/customers");
 

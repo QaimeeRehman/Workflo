@@ -7,6 +7,7 @@ import {
   Package,
   Receipt,
   Settings,
+  Truck,
   Users,
   Wallet,
 } from "lucide-react";
@@ -25,6 +26,11 @@ function Navbar() {
         <NavItem href="/dashboard/billing">
           <Receipt size={18} />
           Billing
+        </NavItem>
+
+        <NavItem href="/dashboard/orders">
+          <Truck size={18} />
+          Orders
         </NavItem>
 
         <NavItem href="/dashboard/customers">

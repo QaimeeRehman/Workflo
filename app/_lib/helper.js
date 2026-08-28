@@ -157,3 +157,12 @@ export function formatPaymentMethod(method) {
     .replaceAll("_", " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
+
+export function getInitials(name) {
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
