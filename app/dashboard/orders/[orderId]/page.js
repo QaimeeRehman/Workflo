@@ -13,7 +13,6 @@ async function page({ params }) {
   const { order } = result;
 
   const inventory = await getInventoryForOrderItems(order.pre_order_items);
-  console.log(inventory);
   return <OrderDetailsPage order={order} inventory={inventory} />;
 }
 

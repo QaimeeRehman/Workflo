@@ -2329,6 +2329,24 @@ export async function getPreOrders() {
   }
 }
 
+export async function updatePreOrderStatus(preOrderId, status) {
+  const { data, error } = await supabase
+    .from("pre_orders")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", preOrderId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export async function getOrderById(orderId) {
   try {
     const { data, error } = await supabase

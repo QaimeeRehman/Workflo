@@ -53,7 +53,7 @@ function DashboardRecentBills({ recentBills }) {
         </div>
 
         <Link
-          href="/bills"
+          href="/dashboard/reports/bills"
           className="text-sm font-medium text-primary-600 hover:text-primary-700"
         >
           View all
