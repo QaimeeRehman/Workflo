@@ -445,7 +445,6 @@ export async function getInventoryMovementsWithProduct(from, to) {
   }
 
   const { data, error } = await query;
-  console.log(data, from, to);
 
   if (error) throw new Error(`${error.message}`);
 
@@ -2258,8 +2257,8 @@ export async function createPreOrder({ customerId, items, notes }) {
       p_notes: notes,
     });
 
-    console.log("create_pre_order RPC data:", orderId);
-    console.log("create_pre_order RPC error:", error);
+    // console.log("create_pre_order RPC data:", orderId);
+    // console.log("create_pre_order RPC error:", error);
 
     if (error) {
       console.error("submitOrder:", error);
@@ -2284,8 +2283,8 @@ export async function createPreOrder({ customerId, items, notes }) {
       .eq("id", orderId)
       .single();
 
-    console.log("Order:", order);
-    console.log("Order lookup error:", orderError);
+    // console.log("Order:", order);
+    // console.log("Order lookup error:", orderError);
 
     if (orderError) {
       console.error("submitOrder order lookup:", orderError);
@@ -2375,8 +2374,8 @@ export async function getOrderById(orderId) {
       .eq("id", orderId)
       .single();
 
-    console.log("getOrderById data:", data);
-    console.log("getOrderById error:", error);
+    // console.log("getOrderById data:", data);
+    // console.log("getOrderById error:", error);
 
     if (error) {
       return {
@@ -2404,4 +2403,26 @@ export async function getOrderById(orderId) {
       error: "Failed to retrieve order.",
     };
   }
+}
+
+export async function getInventoryForOrderItems(items) {
+  const productIds = [...new Set(items.map((item) => item.product_id))];
+
+  const { data, error } = await supabase
+    .from("inventory")
+    .select(
+      `
+      id,
+      product_id,
+      category,
+      quantity_boxes
+    `,
+    )
+    .in("product_id", productIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }

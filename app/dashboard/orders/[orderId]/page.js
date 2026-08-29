@@ -1,15 +1,20 @@
 import OrderDetailsPage from "@/app/_components/Order/OrderDetailsPage";
-import { getOrderById } from "@/app/_lib/dataService";
-import { notFound } from "next/navigation";
+import {
+  getInventoryForOrderItems,
+  getOrderById,
+} from "@/app/_lib/dataService";
 
 async function page({ params }) {
   const { orderId } = await params;
   const result = await getOrderById(orderId);
+
   // if (!result.success || !result.order) notFound();
 
   const { order } = result;
-  console.log(order);
-  return <OrderDetailsPage order={order} />;
+
+  const inventory = await getInventoryForOrderItems(order.pre_order_items);
+  console.log(inventory);
+  return <OrderDetailsPage order={order} inventory={inventory} />;
 }
 
 export default page;

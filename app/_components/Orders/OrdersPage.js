@@ -13,59 +13,6 @@ import {
 import { formatMoney } from "@/app/_lib/helper";
 import { useRouter } from "next/navigation";
 
-const orders = [
-  {
-    id: 1024,
-    customer: "Al Noor Traders",
-    phone: "0300-1234567",
-    items: 8,
-    totalBoxes: 120,
-    amount: 60000,
-    status: "pending",
-    createdAt: "28 Aug 2026, 05:42 AM",
-  },
-  {
-    id: 1023,
-    customer: "City General Store",
-    phone: "0312-7654321",
-    items: 4,
-    totalBoxes: 45,
-    amount: 22500,
-    status: "confirmed",
-    createdAt: "27 Aug 2026, 04:18 PM",
-  },
-  {
-    id: 1022,
-    customer: "Ali Traders",
-    phone: "0321-4567890",
-    items: 6,
-    totalBoxes: 80,
-    amount: 40000,
-    status: "processing",
-    createdAt: "27 Aug 2026, 11:35 AM",
-  },
-  {
-    id: 1021,
-    customer: "Madina Store",
-    phone: "0333-1122334",
-    items: 10,
-    totalBoxes: 150,
-    amount: 75000,
-    status: "completed",
-    createdAt: "26 Aug 2026, 02:10 PM",
-  },
-  {
-    id: 1020,
-    customer: "Hassan General Store",
-    phone: "0345-9988776",
-    items: 3,
-    totalBoxes: 30,
-    amount: 15000,
-    status: "cancelled",
-    createdAt: "26 Aug 2026, 10:22 AM",
-  },
-];
-
 const statusConfig = {
   pending: {
     label: "Pending",

@@ -673,7 +673,7 @@ export async function createBill(billData) {
       );
     }
 
-    const data = await getProductPricing(product.id);
+    // const data = await getProductPricing(product.id);
 
     const saleType = sale_type === "cash_sale" ? "retail" : customer.saleType;
 
