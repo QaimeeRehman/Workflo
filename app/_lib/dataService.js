@@ -2444,3 +2444,124 @@ export async function getInventoryForOrderItems(items) {
 
   return data;
 }
+
+// Settings services
+
+export async function getBusinessSettings() {
+  const { data: settings, error } = await supabase
+    .from("business_settings")
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch business settings: ${error.message}`);
+  }
+
+  return settings;
+}
+
+export async function updateBusinessSettings(data) {
+  const { data: updatedSettings, error } = await supabase
+    .from("business_settings")
+    .update({
+      business_name: data.business_name,
+      phone: data.phone,
+      email: data.email,
+      address: data.address,
+      tax_registration_number: data.tax_registration_number,
+    })
+    .eq("id", "00000000-0000-0000-0000-000000000001")
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update business settings: ${error.message}`);
+  }
+
+  return updatedSettings;
+}
+
+export async function getInvoiceSettings() {
+  const { data: settings, error } = await supabase
+    .from("invoice_settings")
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to fetch invoice settings: ${error.message}`);
+  }
+
+  return settings;
+}
+
+export async function updateInvoiceSettings(data) {
+  const { data: updatedSettings, error } = await supabase
+    .from("invoice_settings")
+    .update({
+      invoice_prefix: data.invoice_prefix,
+      invoice_footer: data.invoice_footer,
+      show_phone: data.show_phone,
+      show_business_address: data.show_business_address,
+      show_tax_registration_number: data.show_tax_registration_number,
+    })
+    .eq("id", "00000000-0000-0000-0000-000000000002")
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update invoice settings: ${error.message}`);
+  }
+
+  return updatedSettings;
+}
+
+export async function updateProductTypesSettings(data) {
+  const { data: updatedSettings, error } = await supabase
+    .from("product_types")
+    .update({
+      value: data.value,
+      label: data.label,
+      default_categories: data.default_categories,
+    })
+    .eq("id", data.id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update product type: ${error.message}`);
+  }
+
+  return updatedSettings;
+}
+
+export async function createProductTypeSettings(data) {
+  const { data: newProductType, error } = await supabase
+    .from("product_types")
+    .insert({
+      value: data.value,
+      label: data.label,
+      default_categories: data.default_categories,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create product type: ${error.message}`);
+  }
+
+  return newProductType;
+}
+
+export async function deleteProductTypeSettings(id) {
+  const { data, error } = await supabase
+    .from("product_types")
+    .delete()
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to delete product type: ${error.message}`);
+  }
+
+  return data;
+}

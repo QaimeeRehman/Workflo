@@ -16,7 +16,7 @@ import { usePathname } from "next/navigation";
 
 function Navbar() {
   return (
-    <nav className=" bg-slate-50">
+    <nav className=" bg-slate-50 shadow-md">
       <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-2 p-8">
         <NavItem href="/dashboard">
           <LayoutDashboard size={18} />

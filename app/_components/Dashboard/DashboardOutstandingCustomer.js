@@ -1,31 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
 
-// const customers = [
-//   {
-//     id: 1,
-//     name: "ABC Traders",
-//     outstanding: 125000,
-//   },
-//   {
-//     id: 2,
-//     name: "Al Rehman Store",
-//     outstanding: 85000,
-//   },
-//   {
-//     id: 3,
-//     name: "New Karachi Mart",
-//     outstanding: 62000,
-//   },
-//   {
-//     id: 4,
-//     name: "City Super Store",
-//     outstanding: 48000,
-//   },
-// ];
-
 function DashboardOutstandingCustomers({ customers }) {
-  console.log(customers);
   return (
     <section className="h-full rounded-xl bg-white p-6 shadow-sm">
       <div className="flex items-start justify-between">

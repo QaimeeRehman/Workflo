@@ -7,13 +7,9 @@ import { getAllProducts } from "@/app/_lib/dataService";
 async function page() {
   const products = await getAllProducts();
   const totalProducts = products.length;
-  const typeCake = products.filter((product) => product.type === "cake");
-  // const totalCakeProducts = typeCake.length;
-  const typeBiscuit = products.filter((product) => product.type === "biscuit");
-  // const totalBiscuitProducts = typeBiscuit.length;
 
   return (
-    <div className="space-y-6 min-w-[80vw]">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

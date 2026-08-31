@@ -25,7 +25,7 @@ async function page({ searchParams }) {
   }
 
   return (
-    <div className="space-y-6 min-w-[80vw]">
+    <div className="space-y-6 ">
       {/* Header */}
       <InventoryHeader />
 

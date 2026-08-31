@@ -7,8 +7,25 @@ import {
 import toast from "react-hot-toast";
 import NewCustomerFormActions from "./NewCustomerFormActions";
 import { redirect } from "next/navigation";
+import { useState } from "react";
 
 function NewCustomerForm({ customer }) {
+  const [cnic, setCnic] = useState(customer?.cnic ?? "");
+  function handleCnicChange(e) {
+    let value = e.target.value.replace(/\D/g, "");
+
+    // Maximum 13 digits
+    value = value.slice(0, 13);
+
+    // XXXXX-XXXXXXX-X
+    if (value.length > 12) {
+      value = `${value.slice(0, 5)}-${value.slice(5, 12)}-${value.slice(12)}`;
+    } else if (value.length > 5) {
+      value = `${value.slice(0, 5)}-${value.slice(5)}`;
+    }
+
+    setCnic(value);
+  }
   async function handleFormSubmitCreateCustomer(formData) {
     const { data, error } = await createCustomerAction(formData);
 
@@ -105,10 +122,14 @@ function NewCustomerForm({ customer }) {
 
             <input
               required
-              defaultValue={customer?.cnic ?? ""}
               name="cnic"
               type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={cnic}
+              onChange={handleCnicChange}
               placeholder="xxxxx-xxxxxxx-x"
+              maxLength={15}
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200"
             />
           </div>

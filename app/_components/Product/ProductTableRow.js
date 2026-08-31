@@ -31,13 +31,6 @@ function PricingTableRow({ product }) {
         {product.company.toUpperCase()}
       </td>
 
-      {/* Status */}
-      {/* <td className="px-6 py-5">
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                    {product.status}
-                  </span>
-                </td> */}
-
       {/* Actions */}
       <td className="px-6 py-5">
         <PricingActions product={product} />

@@ -9,7 +9,7 @@ async function Header() {
     .join("")
     .toUpperCase();
   return (
-    <header className="border-b border-gray-400 bg-white ">
+    <header className=" bg-white ">
       {/* Top Row */}
       <div className="mx-auto flex h-18 max-w-screen-2xl items-center justify-between px-8">
         <Logo height={180} width={180} />

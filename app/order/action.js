@@ -11,7 +11,7 @@ export async function submitOrder({ customerId, items, notes = null }) {
       notes,
     });
 
-    console.log("submitOrder result:", result);
+    // console.log("submitOrder result:", result);
 
     if (!result.success) {
       return result;
@@ -29,4 +29,14 @@ export async function submitOrder({ customerId, items, notes = null }) {
       error: error.message || "Failed to submit order.",
     };
   }
+}
+
+export async function getCustomerByCNIC(cnic) {
+  const {
+    data: [customer],
+  } = await supabase.from("customers").select("*").eq("cnic", cnic);
+
+  if (!customer) throw new Error("Customer not found on this CNIC");
+
+  return customer;
 }
