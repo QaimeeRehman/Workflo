@@ -2565,3 +2565,31 @@ export async function deleteProductTypeSettings(id) {
 
   return data;
 }
+
+// users settings
+
+export async function getAllUsers() {
+  const { data: users, error } = await supabase
+    .from("users")
+    .select('id, "fullName", email, role, "isActive", "createdAt"')
+    .order('"createdAt"', { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch users: ${error.message}`);
+  }
+
+  return users;
+}
+
+export async function createUser(user) {
+  const { data, error } = await supabase.from("users").insert(user);
+
+  if (error) {
+    return {
+      success: false,
+      error: `Failed to create user: ${error.message}`,
+    };
+  }
+
+  return data;
+}

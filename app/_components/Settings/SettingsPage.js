@@ -45,6 +45,7 @@ export default function SettingsPage({
   businessSettings,
   invoiceSettings,
   productTypes,
+  users,
 }) {
   const [activeSection, setActiveSection] = useState("business");
   const [saved, setSaved] = useState(false);
@@ -146,7 +147,7 @@ export default function SettingsPage({
             {/* -------------------------------------------------------------------------- */
             /* Users Settings                                                             */
             /* -------------------------------------------------------------------------- */}
-            {activeSection === "users" && <UsersSettings />}
+            {activeSection === "users" && <UsersSettings users={users} />}
           </main>
         </div>
       </div>

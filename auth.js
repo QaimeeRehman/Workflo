@@ -12,7 +12,7 @@ export const config = {
           .eq("email", credentials.email)
           .single();
 
-        if (!user) return null;
+        if (!user || !user.isActive) return null;
 
         const isValid = await bcrypt.compare(
           credentials.password,

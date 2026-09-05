@@ -4,6 +4,7 @@ import DashboardRecentBills from "../_components/Dashboard/DashboardRecentBills"
 import DashboardRecentPayments from "../_components/Dashboard/DashboardRecentPayments";
 import DashboardSalesChart from "../_components/Dashboard/DashboardSalesChart";
 import DashboardSummary from "../_components/Dashboard/DashboardSummary";
+import PeriodFilter from "../_components/PeriodFilter";
 import {
   getCustomersOwing,
   getDashboardSales,
@@ -34,8 +35,6 @@ async function page({ searchParams }) {
     <div className="space-y-6">
       <DashboardHeader />
 
-      <DashboardSummary dashboardSummary={dashboardSummary} />
-
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="h-full xl:col-span-2">
           <DashboardSalesChart
@@ -47,6 +46,8 @@ async function page({ searchParams }) {
           <DashboardOutstandingCustomers customers={customersOwing} />
         </div>
       </div>
+      <PeriodFilter defaultValue={"today"} />
+      <DashboardSummary dashboardSummary={dashboardSummary} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <DashboardRecentBills recentBills={recentBills} />

@@ -12,7 +12,6 @@ function DashboardHeader() {
         </p>
       </div>
 
-      <PeriodFilter defaultValue={"today"} />
     </div>
   );
 }
